@@ -46,37 +46,29 @@ vstar.nls <- function(model,
         cat("Possible absence of convergence!\n")
     }
 
-    model$estimates$vec.B <- iter.BM$vec.B
-    model$estimates$vec.E <- vec.y - iter.BM$M %*% iter.BM$vec.B
-    model$estimates$M <- iter.BM$M
-    model$estimates$SSR <- drop(t(model$estimates$vec.E) %*%
-                                model$estimates$vec.E)
-    model$estimates$g <- iter.g
-    model$estimates$c <- iter.c
+    nls.result <- list(vec.B = iter.BM$vec.B,
+                       vec.E = vec.y - iter.BM$M %*% iter.BM$vec.B,
+                       M = iter.BM$M,
+                       SSR = drop(t(model$estimates$vec.E) %*%
+                                model$estimates$vec.E),
+                       g = iter.g,
+                       c = iter.c)
 
-    final.est <- get.estimates(model$estimates, model, model$g.function)
+    final.est <- get.estimates(nls.result, model, model$g.function)
 
-    model$coef <- final.est$coef
-    model$sd <- final.est$sd
-    model$t.stat <- final.est$t.stat
-    model$fitted.values <- final.est$fitted.values
-    model$residuals <- final.est$residuals
-    model$cov <- final.est$cov
-    model$g.function <- final.est$g.function
+    result <- list(coef = final.est$coef,
+                   sd = final.est$sd,
+                   t.stat = final.est$t.stat,
+                   fitted.values = final.est$fitted.values,
+                   residuals = final.est$residuals,
+                   cov = final.est$cov,
+                   g.function = final.est$g.function,
+                   estimates = nls.result,
+                   params = model$params,
+                   dim = model$dim,
+                   data = model$data)
 
-    result <- model[c("coef",
-                      "sd",
-                      "t.stat",
-                      "fitted.values",
-                      "residuals",
-                      "cov",
-                      "g.function",
-                      "estimates",
-                      "params",
-                      "dim",
-                      "data")]
-
-    class(result) <- "vstar.model"
+    class(result) <- "vstar"
 
     return(result)
 }

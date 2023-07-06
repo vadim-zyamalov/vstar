@@ -104,6 +104,7 @@ vstar.prepare <- function(endo,
                        m = m,
                        k = length(endo),
                        N = nrow(inner.y))
+
     params <- list(endo = endo,
                    exog = exog,
                    trans = trans,
@@ -113,6 +114,7 @@ vstar.prepare <- function(endo,
                    coint.beta = coint.beta,
                    coint.const = coint.const,
                    coint.trend = coint.trend)
+
     data <- list(Y = inner.y,
                  X = inner.x,
                  S = inner.s,
@@ -121,7 +123,8 @@ vstar.prepare <- function(endo,
     result <- list(params = params,
                    dim = dimensions,
                    data = data)
-    class(result) <- "vstar.model"
+
+    class(result) <- "vstar"
 
     return(result)
 }

@@ -17,11 +17,7 @@ vstar.grid <- function(model,
                        points = 200,
                        trim = .15,
                        gap = .1) {
-    k  <- model$dim$k
-    m  <- model$dim$m
-    N  <- model$dim$N
-    Nx <- ncol(model$data$X)
-
+    m <- model$dim$m
     G.func <- get.G.function(g.function)
 
     if (trim < 1) {
@@ -53,12 +49,12 @@ vstar.grid <- function(model,
 
     c.iter <- icombinations(n = points, k = m - 1)
 
-    result <- foreach(cc = c.iter,
-                      .combine = function(A, B) {
-                          if (A$SSR < B$SSR) A else B
-                      },
-                      .packages = c("arrangements", "foreach", "vstar"),
-                      .options.snow = list(progress = progress)) %dopar% {
+    grid.result <- foreach(cc = c.iter,
+                           .combine = function(A, B) {
+                               if (A$SSR < B$SSR) A else B
+                           },
+                           .packages = c("arrangements", "foreach", "vstar"),
+                           .options.snow = list(progress = progress)) %dopar% {
         cc <- drop(cc)
 
         if (length(cc) > 1 && !all(diff(cc) > gap)) {
@@ -69,9 +65,9 @@ vstar.grid <- function(model,
         g.iter <- ipermutations(n = points, k = m - 1)
 
         foreach(gg = g.iter,
-                          .combine = function(A, B) {
-                              if (A$SSR < B$SSR) A else B
-                          }) %do% {
+                     .combine = function(A, B) {
+                        if (A$SSR < B$SSR) A else B
+                     }) %do% {
             gg <- drop(gg)
 
             g.vals <- grid.data$g[gg]
@@ -93,31 +89,21 @@ vstar.grid <- function(model,
 
     stopCluster(cluster)
 
-    final.est <- get.estimates(result, model, g.function)
+    final.est <- get.estimates(grid.result, model, g.function)
 
-    model$estimates <- result
+    result <- list(coef = final.est$coef,
+                   sd = final.est$sd,
+                   t.stat = final.est$t.stat,
+                   fitted.values = final.est$fitted.values,
+                   residuals = final.est$residuals,
+                   cov = final.est$cov,
+                   g.function = final.est$g.function,
+                   estimates = grid.result,
+                   params = model$params,
+                   dim = model$dim,
+                   data = model$data)
 
-    model$coef <- final.est$coef
-    model$sd <- final.est$sd
-    model$t.stat <- final.est$t.stat
-    model$fitted.values <- final.est$fitted.values
-    model$residuals <- final.est$residuals
-    model$cov <- final.est$cov
-    model$g.function <- final.est$g.function
-
-    result <- model[c("coef",
-                      "sd",
-                      "t.stat",
-                      "fitted.values",
-                      "residuals",
-                      "cov",
-                      "g.function",
-                      "estimates",
-                      "params",
-                      "dim",
-                      "data")]
-
-    class(result) <- "vstar.model"
+    class(result) <- "vstar"
 
     return(result)
 }
