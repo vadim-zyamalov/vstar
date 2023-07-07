@@ -1,17 +1,31 @@
 Package: vstar
 Version: 0.0.1
-Date: 2022-10-08
-Title: Estimating VSTAR models
-Authors@R: c(person("Vadim", "Zyamalov", role = c("aut", "cre", "ctb"),
-                    email = "zyamalov@ranepa.ru"))
-Author: Vadim Zyamalov [aut, cre, ctb]
+Date: 2023-07-07
+Title: Functions and procedures for testing and estimating VSTAR models
+Authors@R: c(person("Vadim", "Zyamalov", role = c("aut", "cre"),
+                    email = "zyamalov@ranepa.ru"),
+             person("Russian Presidential Academy of National Economic and Public Administration",
+                    role = c("cph", "fnd")))
+Author: Vadim Zyamalov [aut, cre]
 Maintainer: Vadim Zyamalov <zyamalov@ranepa.ru>
 Depends: R (>= 3.5.0)
 Encoding: UTF-8
-Imports: doSNOW, foreach, stringr, Rfast
+Imports:
+    doSNOW,
+    foreach,
+    parallel,
+    matrixcalc,
+    MASS,
+    arrangements,
+    stats,
+    utils
 Description: This package contains functions and procedures needed to test and estimate vector smooth transition autoregressive models (VSTAR).
-License: MIT (>= 2)
-URL: https://github.com/d9d6ka/breaktest
-BugReports: https://github.com/d9d6ka/breaktest/issues
+License: MIT + file LICENSE
+URL: https://github.com/vadim-zyamalov/vstar
+BugReports: https://github.com/vadim-zyamalov/vstar/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
+Suggests:
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
