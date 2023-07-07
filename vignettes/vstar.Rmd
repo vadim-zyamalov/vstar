@@ -1,0 +1,22 @@
+---
+title: "vstar - Testing and Estimating Vector Smooth Transition Autoregressive Models"
+output: rmarkdown::html_vignette
+latex_engine: xelatex
+bibliography: '`r system.file("references.bib", package="vstar")`'
+vignette: >
+  %\VignetteIndexEntry{vstar}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(vstar)
+```
+
