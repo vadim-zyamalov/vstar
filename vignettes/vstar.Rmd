@@ -323,6 +323,7 @@ The transition variable is a white noise. The threshold value is a median of the
 s <- rnorm(N)
 thr <- median(s)
 s <- matrix(c(NA, s), ncol = 1)
+print(thr)
 ```
 
 We'll use \(\gamma = 0.5\). The logistic function will be used as the transition one.
