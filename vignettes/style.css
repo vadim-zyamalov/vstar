@@ -1,0 +1,10 @@
+.warningbox {
+  padding: 5px;
+  background: white;
+  color: black;
+  border: 2px solid red;
+  border-radius: 10px;
+}
+.center {
+  text-align: center;
+}

@@ -1,8 +1,22 @@
 ---
 title: "vstar - Testing and Estimating Vector Smooth Transition Autoregressive Models"
-output: rmarkdown::html_vignette
+output:
+    bookdown::html_document2:
+        css: style.css
 latex_engine: xelatex
 bibliography: '`r system.file("references.bib", package="vstar")`'
+header-includes:
+  - \usepackage{amsmath}
+  - \usepackage{mathabx}
+  - \newcommand{\D}{\operatorname{d}}
+  - \newcommand{\E}{\operatorname{E}}
+  - \newcommand{\var}{\operatorname{var}}
+  - \newcommand{\cov}{\operatorname{cov}}
+  - \newcommand{\corr}{\operatorname{corr}}
+  - \newcommand{\diag}{\operatorname{diag}}
+  - \newcommand{\tr}{\operatorname{tr}}
+  - \newcommand{\vecc}{\operatorname{vec}}
+  - \newcommand{\vech}{\operatorname{vech}}
 vignette: >
   %\VignetteIndexEntry{vstar}
   %\VignetteEngine{knitr::rmarkdown}
@@ -16,7 +30,382 @@ knitr::opts_chunk$set(
 )
 ```
 
+# STAR Models
+
+## Univariate models
+
+The package `vstar` is designed to estimate Vector Smooth Transition Autoregression models.
+This class of models is a multivariate generalization of ounivariate STAR models by [@terasvirta1994specification].
+The simplest STAR model may be written in the following form [see, @vandijk2000smooth]
+\begin{equation}
+y_t = \phi_1' x_t + (\phi_2 - \phi_1)' x_t g(s_t \mid \gamma, c) + \varepsilon_t
+(\#eq:star-1)
+\end{equation}
+where \(x_t\) is a vector of all RHS variables of the model including lags of \(y_t\),
+exogenous variables, the intercept, the trend, seasonal components, etc.
+\(g(s_t \mid \gamma, c)\) is the so-called transition function.
+It should be bounded between 0 and 1. \(s_t\) is a transition variable,
+\(\gamma\) is a smoothness of the transition between two regimes, and \(c\) is a threshold
+value such that \(g(c \mid \gamma, c) = 1/2\).
+
+Of course, \((\phi_2 -\phi_1)\) can be substituted by \(\tilde\phi_2\) for the ease of the model
+representation.
+
+The obvious generalization of the \@ref(eq:star-1) is the multi-regime STAR
+\begin{equation}
+y_t = \phi_1' x_t + \tilde\phi_2' x_t g(s_t \mid \gamma_1, c_1) + \tilde\phi_3' x_t g(s_t \mid \gamma_2, c_2) + \dots + \varepsilon_t
+(\#eq:star-2)
+\end{equation}
+where it's assumed that \(c_1 < c_2 < c_3 < \dots\).
+
+Usually used are the two transitional functions: logistic
+\[g(s_t \mid \gamma, c) = \frac{1}{1+\exp \{-\gamma (s_t - c)\}}\]
+and exponential
+\[g(s_t \mid \gamma, c) = 1 - \exp \{-\gamma (s_t - c)^2\}\]
+with \(\gamma > 0\) in both cases.
+
+## Multivariate models
+
+If we go further then the next obvious generalization of \@ref(eq:star-2) is the multivariate STAR [@camacho2004vector,@terasvirta2014specification].
+We start with the single regime VAR(p) model
+\begin{equation}
+y_{t}=A_{1}'y_{t-1}+A_{2}'y_{t-2}+\dots+A_{p}'y_{t-p}+\Phi'd_{t}+\varepsilon_{t}
+(\#eq:vstar-1)
+\end{equation}
+where \(y_t\ (k \times 1)\) is a vector of endogenous variables, \(d_t\ (q \times 1)\) is a vector of all deterministic components,
+\(A_i\ (k \times k), \Phi\ (q \times k)\) are matrices of corresponding coefficients.
+
+\@ref(eq:vstar-1) can be rewritten in more compact matrix form. If we set
+\begin{align*}
+F & = \left(A_1', A_2', \dots, A_p', \Phi' \right)' & \left\{ (pk + q) \times k \right\} \\
+x_t & = (y_{t-1}', y_{t-2}', \dots, y_{t-p}', d_t') & \left\{ (pk + 1) \times 1 \right\}
+\end{align*}
+then \@ref(eq:vstar-1) will take the following form
+\begin{equation}
+y_t = F' x_t + \varepsilon_t
+(\#eq:vstar-2)
+\end{equation}
+
+This compact form is very useful while defining and estimating VSTAR models.
+Following the definition of the univariate STAR model, the multivariate one can be written as
+\begin{align}
+y_t & = \left\{ \sum_{i=1}^m \left( G^{i-1}_t - G^i_t \right) F_i' \right\} x_t +\varepsilon_t (\#eq:vstar-3)\\
+\varepsilon_t & \sim WN(0, \Omega) \nonumber \\
+G^i_t & = \diag \left\{ g (s_{1it \mid \gamma_{i1}, c_{i1}}), \dots, g (s_{kit} \mid \gamma_{ik}, c_{ik}) \right\} \nonumber \\
+G^0_t & = I_k \nonumber \\
+G^m_t & = 0 \nonumber
+\end{align}
+
+\@ref(eq:vstar-3) can be re-parametrized as
+\begin{align}
+y_t & = \left( B_1' + G^1_t B_2' + \dots + G^{m-1}_t B_m' \right) x_t + \varepsilon_t (\#eq:vstar-4) \\
+\varepsilon_t & \sim WN(0, \Omega) \nonumber \\
+G^i_t & = \diag \left\{ g (s_{1it \mid \gamma_{i1}, c_{i1}}), \dots, g (s_{kit} \mid \gamma_{ik}, c_{ik}) \right\} \nonumber \\
+B_1 & = F_1 \nonumber \\
+B_i & = F_i - F_{i-1} \nonumber
+\end{align}
+If we set \(\Psi_t = (I_k, G^1_t, \dots, G^{m-1}_t)'\) and \(B = (B_1, B_2, \dots, B_m)\) then \@ref(eq:vstar-4) will take more compact form
+\begin{equation}
+y_t = \Psi_t' B' x_t + \varepsilon_t (\#eq:vstar-5)
+\end{equation}
+
+We should make an important remark. In the most general case **every** transition function \(g\) for **every** regime has its own \(\gamma_{ij}\) and \(c_{ij}\) for **every** equation in the system!
+Although it's the most general and flexible specification, it can be hard to estimate due to the fact that \(\gamma_{ij}\) and \(c_{ij}\) are usually estimated with NLS, and the appropriate starting values are obtained via grid search.
+So it would be better to decrease the number of \(\gamma_{ij}\) and \(c_{ij}\) as much as possible.
+
+The simplest yet appropriate in most use-cases way is to set \(\gamma_{m1} = \gamma_{m2} = \dots = \gamma_{mk} = \gamma_m\) and \(c_{m1} = c_{m2} = \dots = c_{mk} = c_m\) for any given regime \(m\).
+It means that all equations of the system will have the same transition function for any given regime \(m\).
+In other words the matrix \(G^m_t\) will take the following form
+\[G^m_t = I_k g(s_t \mid \gamma_m, c_m)\]
+
+# VSTAR Model Estimation
+
+If we collect all the parameters from \@ref(eq:vstar-5) which we should estimate we get
+\[\theta = \left\{B, \Omega, \Gamma, C\right\}\]
+where \(B = (B_1, B_2, \dots, B_m)\), \(\Gamma = \{\gamma_{ij}\}\), \(C = \{c_{ij}\}\).
+
+In [@camacho2004vector], it's proposed to estimate all the parameters by ML method.
+[@terasvirta1994specification;@terasvirta2014specification] use NLM for that purpose.
+
+In NLM one should minimize the sum of squared residuals
+\begin{equation}
+\hat{\theta} = \arg\min_{\theta}\sum_{t=1}^{T}\left(y_{t}-\Psi_{t}'B' x_{t}\right)'\left(y_{t}-\Psi_{t}'B' x_{t}\right)
+(\#eq:nls-1)
+\end{equation}
+
+However, [@terasvirta2014specification] point out that if we fix the values of \(\Gamma\) and \(C\),
+i.e. the values of transition function parameters, then the system turns into linear VAR model
+which can be estimated by ordinary OLS. So the strategy of estimating is as follows:
+
+1. Build a grid of values \(\Gamma\) and \(C\) using adequate bounds and grid density.
+2. In every point of the grid, estimate the system equation-wise by OLS using the corresponding values of transition function parameters. Obtain \(\hat\beta_j\), i.e. the estimates of coefficients for every equation, and calculate SSR of the system.
+3. Take the grid point with the minimum value of SSR.
+4. Use the obtained estimates as starting values for NLM.
+
+We can easily show that the first order condition for \@ref(eq:nls-1) is
+\begin{equation}
+\sum_{t=1}^{T}x_{t}\left(y_{t}-\Psi_{t}' B' x_{t}\right)\Psi_{t}'=0
+(\#eq:nls-2)
+\end{equation}
+or
+\[\sum_{t=1}^{T}x_{t}y_{t}'\Psi_{t}'=\sum_{t=1}^{T}x_{t}x_{t}'B\Psi_{t}\Psi_{t}'\]
+Then for fixed \(\Gamma\) and \(C\) we get
+\[\vecc\hat{B}=\left[T^{-1}\sum_{t=1}^{T}\left(\Psi_{t}\Psi_{t}'\right)\otimes\left(x_{t}x_{t}'\right)\right]^{-1}\left[T^{-1}\sum_{t=1}^{T}\vecc\left(x_{t}y_{t}'\Psi_{t}'\right)\right]\]
+of
+\begin{align}
+\vecc\hat{B} & =\left(M'M\right){}^{-1}M'\vecc\left(Y'\right) (\#eq:nls-3)\\
+M & =\left(\Upsilon_{1},\dots,\Upsilon_{T}\right)' & \left\{ Tk\times mk\left(pk+q\right)\right\} \nonumber \\
+\Upsilon_{t} & =\Psi_{t}\otimes x_{t} & \left\{mk\left(pk+q\right)\times k\right\} \nonumber
+\end{align}
+
+The covariance matrix \(\Omega\) is estimated as follows
+\begin{align*}
+\hat{\Omega} & =T^{-1}\hat{E}'\hat{E}\\
+\hat{E} & =\left(\hat{\varepsilon}_{1},\dots,\hat{\varepsilon}_{T}\right)'\\
+\hat{\varepsilon}_{t} & =y_{t}-\Psi_{t}'\hat{B}'x_{t}
+\end{align*}
+
+After we get the starting values we can get the final estimates by the following iterative process:
+
+1. Given \(\hat{B}\) estimate \(\Gamma\) and \(C\) by NLS.
+2. With this newly obtained \(\Gamma\) and \(C\) re-estimate \(\hat{B}\).
+3. Continue until the convergence is achieved.
+
+## The derivation of \@ref(eq:nls-2)
+
+:::: {.warningbox .center data-latex=""}
+Warning!
+
+The derivation below is made by the author of the package!
+The honourable authors of the underlying papers and books are not realted to these calculations.
+
+So, if you find any mistakes, let me know in a way that is convenient for you!
+::::
+
+The equation \@ref(eq:nls-2) derivation is pretty straightforward.
+
+First, from [@gentle2017matrix;@magnus2019matrix] we know, that
+\begin{gather*}
+\D f=\tr\left[\left(\frac{df}{dA}\right)'\D A\right]\\
+\D f=\D\left(\tr f\right)=\tr\left(\D f\right)
+\end{gather*}
+where \(\tr\) is the trace function, i.e. the sum of the diagonal elements of a matrix, \(A\) is a matrix, \(f\) is a scalar function.
+
+We have
+\[f=\sum_{t=1}^{T}\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)\]
+
+Using the following properties of differential and trace
+\begin{gather*}
+\D A=\left(\D a_{ij}\right)\\
+\D\left(AB\right)=\D A\,B+A\,\D B\\
+\D\tr A=\tr\left(\D A\right)\\
+\D A'=\left(\D A\right)'\\
+\tr A=\tr A'\\
+\tr\left(AB\right)=\tr\left(BA\right)\\
+\tr\left(A+B\right)=\tr A+\tr B
+\end{gather*}
+we get the following chain of expressions
+\begin{align*}
+\D f & =\tr\left(\D\sum_{t=1}^{T}\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)\right)=\\
+ & =\tr\sum_{t=1}^{T}\D\left(\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)\right)=\\
+ & =\sum_{t=1}^{T}\tr\D\left(\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)\right)=\\
+ & =\sum_{t=1}^{T}\tr\left[\D\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)+\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\D\left(y_{t}-\Psi_{t}'B'x_{t}\right)\right]=\\
+ & =-\sum_{t=1}^{T}\tr\left[\D\left(\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)+\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\D\left(\Psi_{t}'B'x_{t}\right)\right]=\\
+ & =-\sum_{t=1}^{T}\left\{ \tr\left[\D\left(\Psi_{t}'B'x_{t}\right)'\left(y_{t}-\Psi_{t}'B'x_{t}\right)\right]+\tr\left[\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\D\left(\Psi_{t}'B'x_{t}\right)\right]\right\} =\\
+ & =-\sum_{t=1}^{T}\left\{ \tr\left[\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\D\left(\Psi_{t}'B'x_{t}\right)\right]+\tr\left[\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\D\left(\Psi_{t}'B'x_{t}\right)\right]\right\} =\\
+ & =-2\tr\sum_{t=1}^{T}\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\D\left(\Psi_{t}'B'x_{t}\right)=\bigstar
+\end{align*}
+Here we use \(\bigstar\) to mark the break in the expression chain.
+
+To proceed, let's simplify the differential inside the sum
+\begin{align*}
+\D\left(\Psi_{t}'B' x_{t}\right) & =\D\Psi_{t}'\left(B' x_{t}\right)+\Psi_{t}'\D\left(B'\right)x_{t}=\\
+ & =\Psi_{t}'\left(\D B' x_{t}+B' \D x_{t}\right)=\\
+ & =\Psi_{t}'\D B'\,x_{t}.
+\end{align*}
+For every \(t\) we can consider \(\Psi_t\) and \(x_t\) as constants, hence their differentials are zero.
+
+With that, we get
+\begin{align*}
+\bigstar & =-2\tr\sum_{t=1}^{T}\left(y_{t}-\Psi_{t}'B' x_{t}\right)'\Psi_{t}'\D B'\,x_{t}=\\
+ & =-2\tr\sum_{t=1}^{T}x_{t}'\D B_{t}\:\Psi_{t}\left(y_{t}-\Psi_{t}'B' x_{t}\right) = \bigstar
+\end{align*}
+
+From \(\tr\left(A B\right) = \tr \left(B A\right)\) it follows that \(\tr\left(A_1 A_2 \dots A_n\right) = \tr \left(A_n A_1 \dots A_{n-1}\right)\). Then we have
+\begin{align*}
+\bigstar & =-2\tr\sum_{t=1}^{T}\Psi_{t}\left(y_{t}-\Psi_{t}'B'x_{t}\right)x_{t}'\D B=\\
+ & =\tr\left\{ \left[-2\sum_{t=1}^{T}\Psi_{t}\left(y_{t}-\Psi_{t}'B'x_{t}\right)x_{t}'\right]\D B\right\} .
+\end{align*}
+
+Hence, we get
+\[\frac{df}{dB}=\left[-2\sum_{t=1}^{T}\Psi_{t}\left(y_{t}-\Psi_{t}'B'x_{t}\right)x_{t}'\right]'=-2\sum_{t=1}^{T}x_{t}\left(y_{t}-\Psi_{t}'B'x_{t}\right)'\Psi_{t}'\]
+
+## The derivation of \@ref(eq:nls-3)
+
+:::: {.warningbox .center data-latex=""}
+Warning!
+
+The derivation below is made by the author of the package!
+The honourable authors of the underlying papers and books are not realted to these calculations.
+
+So, if you find any mistakes, let me know in a way that is convenient for you!
+::::
+
+Let's go back to
+\[\vecc\hat{B} = \left[T^{-1}\sum_{t=1}^{T}\left(\Psi_{t}\Psi_{t}'\right)\otimes\left(x_{t}x_{t}'\right)\right]^{-1}\left[T^{-1}\sum_{t=1}^{T}\vecc\left(x_{t}y_{t}'\Psi_{t}'\right)\right] = \bigstar\]
+
+From [@gentle2017matrix] we can get the following properties of Kronecker product
+\begin{gather*}
+\left(A\otimes B\right)'=A'\otimes B'\\
+\left(A\otimes B\right)\left(C\otimes D\right)=\left(AC\right)\otimes\left(BD\right)\\
+\vecc\left(ABC\right)=\left(C'\otimes A\right)\vecc B
+\end{gather*}
+The corresponding matrix products should exist.
+
+Then we have
+\[\bigstar = \left[T^{-1}\sum_{t=1}^{T}\left(\Psi_{t}\otimes x_{t}\right)\left(\Psi_{t}'\otimes x_{t}'\right)\right]^{-1}\left[T^{-1}\sum_{t=1}^{T}\left(\Psi_{t}\otimes x_{t}\right)\vecc y_{t}'\right] = \bigstar\]
+
+As \(y_t\) is already a vector then \(\vecc y_t' = \vecc y_t\). Hence we have
+\begin{align*}
+\bigstar & =\left[\sum_{t=1}^{T}\left(\Psi_{t}\otimes x_{t}\right)\left(\Psi_{t}'\otimes x_{t}'\right)\right]^{-1}\left[\sum_{t=1}^{T}\left(\Psi_{t}\otimes x_{t}\right)\vecc y_{t}\right]=\\
+ & =\left[\sum_{t=1}^{T}\Upsilon_{t}\Upsilon_{t}'\right]^{-1}\left[\sum_{t=1}^{T}\Upsilon_{t}\vecc y_{t}\right]
+\end{align*}
+
+Setting \(M = \left(\Upsilon_1, \Upsilon_2, \dots, \Upsilon_T \right)'\) we can see that
+\[\sum_{t=1}^{T}\Upsilon_{t}\Upsilon_{t}' = M'M\]
+Setting \(Y = \left(y_1', \dots, y_Y'\right)'\) we can get
+\[\sum_{t=1}^T \Upsilon_t \vecc y_t = M' \vecc \left(Y'\right)\].
+
+Hence, we get \@ref(eq:nls-3).
+
+## The analysis of \@ref(eq:nls-3)
+
+It may seem that \@ref(eq:nls-3) is not compatible with element-wise estimation of the system. But that's not the case.
+
+Let's look closely at \(M\) matrix in \@ref(eq:nls-3) taking into account the definitions of \(\Upsilon_j\) and Kronecker product. For the ease of explanations we'll consider the case of two regimes, i.e. \(m = 2\). We can notice that
+
+1. The number of columns in \(M\) is exactly the same as the number of coefficients in \(B\).
+2. The first half of the columns has exactly the same structure as the second one.
+3. Each of them is a stack of block-diagonal matrices of size \(k \times (kp + q)\). Each of these blocks is a row with the number of elements equal to the number of variables in \(x_t\).
+4. The blocks in the top matrix of the first half is \(x_1\). It can be seen, that the corresponding block of the second half is \(x_1\) multiplied by the value of transition function at the moment \(t = 1\). etc.
+5. Blocks are located at the crossing of columns relevant to \(x_t\) of one of the equations and the row relevant to the LHS of the same equation. All other elements are zero.
+
+In other words, if we multiply vectors of the "initial" sum of squares of \@ref(eq:nls-3)
+\[\left[\vecc\left(Y'\right)-MB\right]'\left[\vecc\left(Y'\right)-MB\right]\]
+we'll see that this final sum can be split into two separate sums, each of them will depend on the coefficients of one of the equations **only**. Any changes in coefficients of any given equation will affect only the corresponding sum.
+
+So minimization of the joint sum is equivalent to the separate minimization of these separate sums. And that's exactly the equation-wise estimation of the system.
+
+# Practical example
+
+Let's try to apply methods in `vstar` package to the "real" data. First, we load the package into the namespace.
+
 ```{r setup}
 library(vstar)
 ```
 
+We'll generate 1000 observations of 2 variables. Our model will have 2 regimes with a VAR(1) model with a constant in both of them.
+
+```{r}
+N <- 1000
+```
+
+Initial values \(y_0\) are drawn from standard Normal distribution.
+
+```{r}
+x <- matrix(rnorm(2), nrow = 1)
+x <- cbind(x, 1)
+```
+
+The transition variable is a white noise. The threshold value is a median of the transition variable.
+
+```{r}
+s <- rnorm(N)
+thr <- median(s)
+s <- matrix(c(NA, s), ncol = 1)
+```
+
+We'll use \(\gamma = 0.5\). The logistic function will be used as the transition one.
+
+Let's generate the array of transition function values. We'll use vectorized functions if possible. Here we use Kronecker product to produce the columns of \(\gamma\) and \(c\). In our case we could use a simple product, but in the case of more than two regimes we should use Kronecker product.
+
+```{r}
+gg <- vstar:::unity(N + 1) %x% t(.5)
+cc <- vstar:::unity(N + 1) %x% t(thr)
+
+G.func <- vstar:::get.G.function("L")
+
+G.mat <- G.func(s, gg, cc)
+G.mat <- G.mat[-1, ,drop = FALSE]
+```
+
+We'll use the following matrices to generate our data
+\begin{gather*}
+A_1' = \left(\matrix{.5 & .2 \\ -.3 & .1}\right) \\
+\Phi_1' = \left(\matrix{.1 \\ .2}\right) \\
+A_2' = \left(\matrix{.2 & -.8 \\ .3 & .8}\right) \\
+\Phi_2' = \left(\matrix{.2 \\ .1}\right)
+\end{gather*}
+We also construct a \(B\) matrix.
+
+```{r}
+A1 <- matrix(c(.5, -.3, .2, .1), ncol = 2)
+A1 <- cbind(A1, t(t(c(.1, .2))))
+A2 <- matrix(c(.2, .3, -.8, .8), ncol = 2)
+A2 <- cbind(A2, t(t(c(.2, .1))))
+B <- cbind(t(A1), t(A2))
+```
+
+Then we generate our data. We delete first 50 observations to eliminate the period of achieving the stable level.
+
+We use Normal random variable multiplied by 0.01 as the error term.
+
+```{r}
+for (k in 1:N) {
+    PSI <- t(t(c(1, G.mat[k, ]))) %x% diag(2)
+    x <- rbind(
+        x,
+        cbind(t(t(PSI) %*% t(B) %*% t(x[nrow(x), , drop = FALSE]) + .01 * t(t(rnorm(2)))), 1)
+    )
+}
+y <- x[52:(N + 1), 1:2, drop = FALSE]
+colnames(y) <- c("y1", "y2")
+s <- s[52:(N + 1)]
+```
+
+First we call a function which prepare data for the subsequent model fitting.
+
+```{r}
+model <- vstar.prepare(endo = c("y1", "y2"),
+                       const = TRUE,
+                       p = 1,
+                       m = 2,
+                       trans = s,
+                       dataset = y)
+```
+
+The `model` is an object of S3-class `vstar`. It contains nearly all parameters of the model except for the transition function.
+
+Then we call a function for a grid search of the NLS starting values. We should provide grid limits for \(\gamma\), the corresponding limits for \(c\) are computed automatically from the \(s\) variable observations.
+
+```{r, results = FALSE}
+result <- vstar.grid(model = model,
+                     gamma.limits = c(0.1, 1),
+                     points = 100)
+```
+
+Pass the resulting object to the NLS.
+
+```{r}
+result.nls <- vstar.nls(result, tol = 1e-6)
+```
+
+And finally, print the summary.
+
+```{r}
+summary(result.nls)
+```
+
+# References {-}
+
+<div id="refs"></div>
