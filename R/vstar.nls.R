@@ -22,11 +22,11 @@ vstar.nls <- function(model,
     converged <- FALSE
 
     for (step in 1:iter) {
-        resnls <- nls(vec.y ~ yf(gx, cx, iter.B),
-                      start = list(gx = iter.g, cx = iter.c),
-                      control = control)
+        iter.nls <- nls(vec.y ~ yf(gx, cx, iter.B),
+                        start = list(gx = iter.g, cx = iter.c),
+                        control = control)
 
-        result <- coef(resnls)
+        result <- coef(iter.nls)
         dd <- result - c(iter.g, iter.c)
 
         iter.g <- result[startsWith(names(result), "gx")]
@@ -46,19 +46,29 @@ vstar.nls <- function(model,
         cat("Possible absence of convergence!\n")
     }
 
+    nls.summary <- summary(iter.nls)
+    g.sd <- nls.summary$coefficients[, 2][names(iter.g)]
+    c.sd <- nls.summary$coefficients[, 2][names(iter.c)]
+
     nls.result <- list(vec.B = iter.BM$vec.B,
                        vec.E = vec.y - iter.BM$M %*% iter.BM$vec.B,
                        M = iter.BM$M,
                        SSR = drop(t(model$estimates$vec.E) %*%
                                 model$estimates$vec.E),
                        g = iter.g,
-                       c = iter.c)
+                       g.sd = g.sd,
+                       c = iter.c,
+                       c.sd = c.sd)
 
     final.est <- get.estimates(nls.result, model, model$g.function)
 
     result <- list(coef = final.est$coef,
                    sd = final.est$sd,
                    t.stat = final.est$t.stat,
+                   g = iter.g,
+                   g.sd = g.sd,
+                   c = iter.c,
+                   c.sd = c.sd,
                    fitted.values = final.est$fitted.values,
                    residuals = final.est$residuals,
                    cov = final.est$cov,

@@ -39,6 +39,17 @@ summary.vstar <- function(model, ...) {
             nrow(model$params$coint.trend), "\n")
     }
 
+    sum.func <- "custom"
+    if (is.character(model$g.finction)) {
+        if (model$g.function == "L") sum.func <- "logistic"
+        else if (model$g.function == "L") sum.func <- "exponent"
+    }
+    cat("\nTransition function:", sum.func, "\n")
+    cat("gamma values:\n")
+    print(model$g)
+    cat("threshold values:\n")
+    print(model$c)
+
     cat("\nMatrix of coefficients:\n")
     print(model$coef)
 
