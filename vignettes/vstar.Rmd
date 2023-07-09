@@ -374,23 +374,57 @@ colnames(y) <- c("y1", "y2")
 s <- s[52:(N + 1)]
 ```
 
+Let's generate another two series using only \(A_1\) and \(\Phi_1\) to compare the results of linearity tests. This new data has only one regime!
+
+```{r}
+x0 <- matrix(rnorm(2), nrow = 1)
+x0 <- cbind(x0, 1)
+
+for (k in 1:N) {
+    PSI <- t(t(c(1, G.mat[k, ]))) %x% diag(2)
+    x0 <- rbind(
+        x0,
+        cbind(t(A1 %*% t(x0[nrow(x0), , drop = FALSE]) + .01 * t(t(rnorm(2)))), 1)
+    )
+}
+y0 <- x0[52:(N + 1), 1:2, drop = FALSE]
+colnames(y0) <- c("y1", "y2")
+```
+
 First we call a function which prepare data for the subsequent model fitting.
 
 ```{r}
 model <- vstar.prepare(endo = c("y1", "y2"),
                        const = TRUE,
                        p = 1,
-                       m = 2,
                        trans = s,
                        dataset = y)
+model0 <- vstar.prepare(endo = c("y1", "y2"),
+                        const = TRUE,
+                        p = 1,
+                        trans = s,
+                        dataset = y0)
 ```
 
-The `model` is an object of S3-class `vstar`. It contains nearly all parameters of the model except for the transition function.
+The `model` and `model0` are objects of S3-class `vstar`. They contain nearly all parameters of the model except for the transition function.
+
+Lets run a linearity tests. First we'll test `model` with 1 lag of the transition variable.
+
+```{r}
+linearity.test(model, J = 1)
+```
+
+And let's compare the result with the one of testing `model0`.
+
+```{r}
+linearity.test(model0, J = 1)
+```
 
 Then we call a function for a grid search of the NLS starting values. We should provide grid limits for \(\gamma\), the corresponding limits for \(c\) are computed automatically from the \(s\) variable observations.
 
 ```{r, results = FALSE}
 result <- vstar.grid(model = model,
+                     m = 2,
                      gamma.limits = c(0.1, 1),
                      points = 100)
 ```
