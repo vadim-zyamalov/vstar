@@ -12,26 +12,36 @@
 #'
 #' @export
 vstar.grid <- function(model,
+                       m = 2,
                        g.function = "L",
                        gamma.limits = c(.1, 100),
                        points = 200,
                        trim = .15,
                        gap = .1) {
-    m <- model$dim$m
+
+    p <- model$dim$p
+    p.fixed <- model$dim$p.fixed
+    k <- model$dim$k
+    N <- model$dim$N
+
+    if (m < 2) {
+        stop("m too low: at least 2 regimes is needed!")
+    }
+
     G.func <- get.G.function(g.function)
 
     if (trim < 1) {
-        min.c.ind <- trunc(model$dim$N * trim)
+        min.c.ind <- trunc(N * trim)
     } else {
         min.c.ind <- trim
     }
-    max.c.ind <- model$dim$N - min.c.ind
+    max.c.ind <- N - min.c.ind
 
     min.c <- model$data$S[order(model$data$S)][min.c.ind]
     max.c <- model$data$S[order(model$data$S)][max.c.ind]
 
     if (gap < 1) {
-        gap <- trunc(model$dim$N * gap)
+        gap <- trunc(N * gap)
     }
 
     grid.data <- get.grid(gamma.limits,
@@ -72,7 +82,7 @@ vstar.grid <- function(model,
 
             g.vals <- grid.data$g[gg]
 
-            BM <- get.B.mat(model, g.vals, c.vals, G.func)
+            BM <- get.B.mat(model, m, g.vals, c.vals, G.func)
 
             vec.E  <- vec(t(model$data$Y)) - BM$M %*% BM$vec.B
 
@@ -82,6 +92,7 @@ vstar.grid <- function(model,
                  vec.E = vec.E,
                  M = BM$M,
                  SSR = SSR,
+                 m = m,
                  g = g.vals,
                  c = c.vals)
         }
@@ -102,7 +113,11 @@ vstar.grid <- function(model,
                    g.function = final.est$g.function,
                    estimates = grid.result,
                    params = model$params,
-                   dim = model$dim,
+                   dim = list(p = p,
+                              p.fixed = p.fixed,
+                              m = m,
+                              k = k,
+                              N = N),
                    data = model$data)
 
     class(result) <- "vstar"

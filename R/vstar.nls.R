@@ -9,6 +9,8 @@ vstar.nls <- function(model,
                       iter = 10000,
                       algorithm = "default",
                       control = nls.control()) {
+    m <- model$dim$m
+    
     vec.y <- vec(t(model$data$Y))
     G.func <- get.G.function(model$g.function)
 
@@ -18,9 +20,9 @@ vstar.nls <- function(model,
     }
 
     Q <- function(gc) {
-        g <- gc[1:(model$dim$m - 1)]
-        thr <- gc[(model$dim$m):length(gc)]
-        BM <- get.B.mat(model, g, thr, G.func)
+        g <- gc[1:(m - 1)]
+        thr <- gc[m:length(gc)]
+        BM <- get.B.mat(model, m, g, thr, G.func)
         vec.E <- vec(t(model$data$Y)) - BM$M %*% BM$vec.B
         drop(t(vec.E) %*% vec.E)
     }
@@ -45,11 +47,11 @@ vstar.nls <- function(model,
         dd <- result - c(iter.g, iter.c)
 
         #iter.g <- result[startsWith(names(result), "gx")]
-        iter.g <- result[1:(model$dim$m - 1)]
+        iter.g <- result[1:(m - 1)]
         #iter.c <- result[startsWith(names(result), "cx")]
-        iter.c <- result[(model$dim$m):length(result)]
+        iter.c <- result[m:length(result)]
 
-        iter.BM <- get.B.mat(model, iter.g, iter.c, G.func)
+        iter.BM <- get.B.mat(model, m, iter.g, iter.c, G.func)
         iter.B <- iter.BM$vec.B
 
         if (sqrt(dd %*% dd) < tol) {
@@ -73,6 +75,7 @@ vstar.nls <- function(model,
                        M = iter.BM$M,
                        SSR = drop(t(model$estimates$vec.E) %*%
                                 model$estimates$vec.E),
+                       m = m,
                        g = iter.g,
                        #g.sd = g.sd,
                        c = iter.c)

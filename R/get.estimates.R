@@ -2,7 +2,7 @@
 #' @importFrom matrixcalc vec
 get.estimates <- function(est, model, g.function) {
     k <- model$dim$k
-    m <- model$dim$m
+    m <- est$m
     N <- model$dim$N
 
     G.func <- get.G.function(g.function)

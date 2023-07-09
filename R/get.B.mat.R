@@ -1,12 +1,11 @@
 #' @importFrom MASS ginv
 #' @importFrom matrixcalc vec
-get.B.mat <- function(model, g, thr, g.function = NULL) {
+get.B.mat <- function(model, m, g, thr, g.function = "L") {
     if (is.null(g.function) && !("g.function" %in% names(model))) {
         stop("B: No transition function is provided!")
     }
 
     k  <- model$dim$k
-    m  <- model$dim$m
     N  <- model$dim$N
     Nx <- ncol(model$data$X)
 

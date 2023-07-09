@@ -6,7 +6,6 @@ vstar.prepare <- function(endo,
                           trend = FALSE,
                           season = NULL,
                           p = 1,
-                          m = 1,
                           coint.beta = NULL,
                           coint.const = FALSE,
                           coint.trend = FALSE,
@@ -101,7 +100,6 @@ vstar.prepare <- function(endo,
 
     dimensions <- list(p = p,
                        p.fixed = inner.p,
-                       m = m,
                        k = length(endo),
                        N = nrow(inner.y))
 
