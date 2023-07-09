@@ -40,7 +40,7 @@ summary.vstar <- function(model, ...) {
     }
 
     sum.func <- "custom"
-    if (is.character(model$g.finction)) {
+    if (is.character(model$g.function)) {
         if (model$g.function == "L") sum.func <- "logistic"
         else if (model$g.function == "L") sum.func <- "exponent"
     }
