@@ -36,8 +36,6 @@ get.estimates <- function(est, dataset, G.func) {
     N <- dataset$dim$N
     Nx <- ncol(dataset$data$X)
 
-    G.func <- get.G.function(g.function)
-
     vec.Yf <- est$M %*% est$vec.B
     vec.E  <- vec(t(dataset$data$Y)) - vec.Yf
 
@@ -80,6 +78,5 @@ get.estimates <- function(est, dataset, G.func) {
                 t.stat = B / sqrt(VAR),
                 fitted.values = Yf,
                 residuals = E,
-                cov = OMEGA,
-                g.function = g.function))
+                cov = OMEGA))
 }

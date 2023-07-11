@@ -38,8 +38,8 @@ get.K.mat <- function(model, J = 0) {
 
     H.mat <- get.H.mat(model$coef)
 
-    G.func <- get.G.function(model$g.function)
-    G.deriv <- get.G.derivative(model$g.function)
+    G.func  <- model$func$g.function
+    G.deriv <- model$func$g.derivative
 
     sm <- model$data$S %x% t(unity(m - 1))
     gm <- unity(N) %x% t(model$g)

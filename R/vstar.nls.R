@@ -50,7 +50,7 @@ vstar.nls <- function(model,
     m <- model$dim$m
 
     vec.y <- vec(t(model$data$Y))
-    G.func <- get.G.function(model$g.function)
+    G.func <- model$func$g.function
 
     yf <- function(g, thr) { # nolint
         BM <- get.B.mat(model, g, thr, G.func)
@@ -131,7 +131,8 @@ vstar.nls <- function(model,
                    fitted.values = final.est$fitted.values,
                    residuals = final.est$residuals,
                    cov = final.est$cov,
-                   g.function = final.est$g.function,
+                   g.function = model$g.function,
+                   func = model$func,
                    estimates = nls.result,
                    params = model$params,
                    dim = model$dim,
