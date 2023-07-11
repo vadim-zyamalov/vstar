@@ -13,7 +13,7 @@ summary.vstar <- function(model, ...) {
         sum.func <- paste(model$g.function, "-", sep = "")
     }
 
-    cat("Results of ", sum.func, "VSTAR model estimation\n\n")
+    cat("Results of ", sum.func, "VSTAR model estimation\n\n", sep = "")
     cat("Number of regimes:     ", model$dim$m, "\n")
     cat("Number of lags:        ", model$dim$p, "\n")
     cat("Number of observations:", model$dim$N, "\n")
