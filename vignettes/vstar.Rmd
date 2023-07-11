@@ -43,6 +43,8 @@ y_t = \phi_1' x_t + (\phi_2 - \phi_1)' x_t g(s_t \mid \gamma, c) + \varepsilon_t
 \end{equation}
 where \(x_t\) is a vector of all RHS variables of the model including lags of \(y_t\),
 exogenous variables, the intercept, the trend, seasonal components, etc.
+Following [@rothman1999multivariate], cointegration relations can also be included to
+the list of exogenous variables.
 \(g(s_t \mid \gamma, c)\) is the so-called transition function.
 It should be bounded between 0 and 1. \(s_t\) is a transition variable,
 \(\gamma\) is a smoothness of the transition between two regimes, and \(c\) is a threshold
@@ -502,10 +504,10 @@ First we should prepare data needed for
 
 ```{r}
 model0 <- vstar.prepare(endo = c("y1", "y2"),
-                       const = TRUE,
-                       p = 1,
-                       trans = s,
-                       dataset = y0)
+                        const = TRUE,
+                        p = 1,
+                        trans = s,
+                        dataset = y0)
 model1 <- vstar.prepare(endo = c("y1", "y2"),
                         const = TRUE,
                         p = 1,
@@ -555,22 +557,22 @@ Then we call a function for a grid search of the NLS starting values. We should 
 For now we will estimate all nonlinear models as two-regime models, even `model2`!
 
 ```{r, results = FALSE}
-result1 <- vstar.grid(model = model1,
-                     m = 2,
-                     gamma.limits = c(0.1, 1),
-                     points = 100)
-result2 <- vstar.grid(model = model2,
-                     m = 2,
-                     gamma.limits = c(0.1, 1),
-                     points = 100)
-result3 <- vstar.grid(model = model3,
-                     m = 2,
-                     gamma.limits = c(0.1, 1),
-                     points = 100)
-result4 <- vstar.grid(model = model4,
-                     m = 2,
-                     gamma.limits = c(0.1, 1),
-                     points = 100)
+result1 <- vstar.grid(dataset = model1,
+                      m = 2,
+                      gamma.limits = c(0.1, 1),
+                      points = 100)
+result2 <- vstar.grid(dataset = model2,
+                      m = 2,
+                      gamma.limits = c(0.1, 1),
+                      points = 100)
+result3 <- vstar.grid(dataset = model3,
+                      m = 2,
+                      gamma.limits = c(0.1, 1),
+                      points = 100)
+result4 <- vstar.grid(dataset = model4,
+                      m = 2,
+                      gamma.limits = c(0.1, 1),
+                      points = 100)
 ```
 
 Then we pass the resulting object to the NLS.
