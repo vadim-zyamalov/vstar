@@ -101,21 +101,22 @@
 #' @importFrom matrixcalc vec
 #'
 #' @export
-vstar.grid <- function(model,
+vstar.grid <- function(dataset,
                        m = 2,
                        g.function = "L",
+                       g.derivative = get.G.derivative(g.function),
                        gamma.limits = c(.1, 100),
                        points = 200,
                        trim = .15,
                        gap = .1) {
 
-    p <- model$dim$p
-    p.fixed <- model$dim$p.fixed
-    k <- model$dim$k
-    N <- model$dim$N
+    p <- dataset$dim$p
+    p.fixed <- dataset$dim$p.fixed
+    k <- dataset$dim$k
+    N <- dataset$dim$N
 
-    if (!"vstar.data" %in% class(model)) {
-        stop("Wrong `model`: an object with prepared data is needed!")
+    if (!"vstar.data" %in% class(dataset)) {
+        stop("Wrong `dataset`: an object with prepared data is needed!")
     }
     if (m < 2) {
         stop("`m` too low: at least 2 regimes is needed!")
@@ -130,8 +131,8 @@ vstar.grid <- function(model,
     }
     max.c.ind <- N - min.c.ind
 
-    min.c <- model$data$S[order(model$data$S)][min.c.ind]
-    max.c <- model$data$S[order(model$data$S)][max.c.ind]
+    min.c <- dataset$data$S[order(dataset$data$S)][min.c.ind]
+    max.c <- dataset$data$S[order(dataset$data$S)][max.c.ind]
 
     if (gap < 1) {
         gap <- trunc(N * gap)
@@ -175,9 +176,9 @@ vstar.grid <- function(model,
 
             g.vals <- grid.data$g[gg]
 
-            BM <- get.B.mat(model, m, g.vals, c.vals, G.func)
+            BM <- get.B.mat(dataset, m, g.vals, c.vals, G.func)
 
-            vec.E  <- vec(t(model$data$Y)) - BM$M %*% BM$vec.B
+            vec.E  <- vec(t(dataset$data$Y)) - BM$M %*% BM$vec.B
 
             SSR <- drop(t(vec.E) %*% vec.E)
 
@@ -193,7 +194,7 @@ vstar.grid <- function(model,
 
     stopCluster(cluster)
 
-    final.est <- get.estimates(grid.result, model, g.function)
+    final.est <- get.estimates(grid.result, dataset, G.func)
 
     result <- list(coef = final.est$coef,
                    sd = final.est$sd,
@@ -203,15 +204,17 @@ vstar.grid <- function(model,
                    fitted.values = final.est$fitted.values,
                    residuals = final.est$residuals,
                    cov = final.est$cov,
-                   g.function = final.est$g.function,
+                   g.function = g.function,
+                   func = list(g.function = G.func,
+                               g.derivative = g.derivative),
                    estimates = grid.result,
-                   params = model$params,
+                   params = dataset$params,
                    dim = list(p = p,
                               p.fixed = p.fixed,
                               m = m,
                               k = k,
                               N = N),
-                   data = model$data)
+                   data = dataset$data)
 
     class(result) <- "vstar"
 
