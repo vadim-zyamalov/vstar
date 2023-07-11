@@ -3,22 +3,27 @@
 #' @importFrom matrixcalc vec
 #'
 #' @export
-stability.test <- function(model) {
+stability.test <- function(model, stat.type = "all") {
+    if (!"vstar" %in% class(model)) {
+        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+    }
+
     k  <- model$dim$k
-    m <- model$dim$m
+    m  <- model$dim$m
     N  <- model$dim$N
     Nx <- ncol(model$data$X)
 
     G.func <- get.G.function(model$g.function)
-    gg <- unity(N) %x% t(model$g)
-    cc <- unity(N) %x% t(model$c)
-    G.mat <- G.func(model$data$S, gg, cc)
+    sm <- model$data$S %x% t(unity(m - 1))
+    gm <- unity(N) %x% t(model$g)
+    cm <- unity(N) %x% t(model$c)
+    G.mat <- G.func(sm, gm, cm)
 
     Z <- NULL
     for (i in 1:N) {
         PSI <- t(t(c(1, G.mat[i, ]))) %x% diag(k)
         x <- t(model$data$X[i, , drop = FALSE])
-        tau <- j / N
+        tau <- i / N
 
         Z <- rbind(Z,
                    t(vec(PSI %x% (tau * x))))

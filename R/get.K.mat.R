@@ -13,12 +13,13 @@ get.K.mat <- function(model, J = 0) {
     G.func <- get.G.function(model$g.function)
     G.deriv <- get.G.derivative(model$g.function)
 
-    gg <- unity(N) %x% t(model$g)
-    cc <- unity(N) %x% t(model$c)
+    sm <- model$data$S %x% t(unity(m - 1))
+    gm <- unity(N) %x% t(model$g)
+    cm <- unity(N) %x% t(model$c)
 
-    G.mat <- G.func(model$data$S, gg, cc)
-    G.g.mat <- G.deriv[[1]](model$data$S, gg, cc)
-    G.c.mat <- G.deriv[[2]](model$data$S, gg, cc)
+    G.mat <- G.func(sm, gm, cm)
+    G.g.mat <- G.deriv[[1]](sm, gm, cm)
+    G.c.mat <- G.deriv[[2]](sm, gm, cm)
 
     K.mat <- NULL
 

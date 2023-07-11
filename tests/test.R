@@ -24,7 +24,7 @@ x0 <- x
 
 s <- rnorm(N)
 thr <- median(s)
-s <- t(t(c(NA, s)))
+s <- t(t(c(NA, s))) %x% t(vstar:::unity(1))
 
 gg <- vstar:::unity(N + 1) %x% t(.5)
 cc <- vstar:::unity(N + 1) %x% t(thr)
