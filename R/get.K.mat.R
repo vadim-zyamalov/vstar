@@ -1,4 +1,29 @@
+#' @title
+#' Get matrix of the models first derivatives.
+#'
+#' @description
+#' An auxiliary function for estimating the matrix \eqn{K} of the first
+#' derivatives of the model by its parameters \eqn{\{B, \Omega, \Gamma, C\}}.
+#'
+#' This matrix is used in tests from (Teräsvirta and Yang, 2014).
+#'
+#' @param model an object of S3-class `vstar`.
+#' @param J a number of first observations to be dropped.
+#'
+#' @return
+#' A matrix of first derivatives by \eqn{\{B, \Gamma, C\}}.
+#' \eqn{\Omega} is excluded as all derivatives by it are zero.
+#'
+#' @references
+#' T. Teräsvirta and Y. Yang,
+#' “Linearity and misspecification tests for vector smooth transition
+#' regression models,”
+#' Department of Economics and Business Economics, Aarhus University,
+#' 2014–04, Feb. 2014.
+#'
 #' @importFrom matrixcalc vec
+#'
+#' @keywords internal
 get.K.mat <- function(model, J = 0) {
     if (!"vstar" %in% class(model)) {
         stop("Wrong `model`: an object with estimated VSTAR model is needed!")

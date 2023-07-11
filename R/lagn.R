@@ -1,3 +1,19 @@
+#' @title
+#' Modfied `lag` function
+#'
+#' @description
+#' Inspired by the function `lagn` from GAUSS.
+#' Adds the value of `na` to the beginning or the end of the result
+#' to keep the initial size of the array.
+#'
+#' @param x a vector or matrix with the values to be lagged
+#' If a vector is provided it will be converted to a column matrix.
+#' @param i an integer indicating which lag to use.
+#' @param na a value to fill missing points.
+#'
+#' @return a vector (!) with the computed lags.
+#'
+#' @keywords internal
 lagn <- function(x,
                  i,
                  na = NA) {

@@ -1,3 +1,37 @@
+#' @title
+#' Improve VSTAR estimates using NLS
+#'
+#' @description
+#' This function estimates the parameters of VSTAR model by NLS using
+#' the provided `vstar` object as the source of data and starting values.
+#'
+#' @details
+#' As stated by (Teräsvirta and Yang, 2014), estimating VSTAR directly by NLS
+#' is quite hard due to the big number of parameters.
+#' They proposed to estimate the model by grid search.
+#' The results of this grid search can be used as the starting values for NLS.
+#'
+#' The procedure goes as follows:
+#' * first, \eqn{\gamma} and \eqn{c} are reestimated using \link[stats]{optim}
+#' with "Nelder-Mead" algorithm.
+#' * then, with these new values \eqn{B} is reestimated.
+#' * Repeat until convergence is reached.
+#'
+#' @param model an object of S3-classes `vstar`.
+#' @param tol a level of tolerance. If the vector of \eqn{\gamma} and \eqn{c}
+#' changes less than this value the process stops.
+#' @param iter the maximum number of iterations.
+#'
+#' @return
+#' An object of S3-class `vstar`. See \link{vstar.grid} for details.
+#'
+#' @references
+#' T. Teräsvirta and Y. Yang,
+#' “Specification, estimation and evaluation of
+#' vector smooth transition autoregressive models with applications,”
+#' Department of Economics and Business Economics, Aarhus University,
+#' 2014–08, Mar. 2014.
+#'
 #' @importFrom stats nls
 #' @importFrom stats nls.control
 #' @importFrom matrixcalc vec

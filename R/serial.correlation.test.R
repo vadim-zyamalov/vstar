@@ -1,10 +1,76 @@
+#' @title
+#' Serial correlation test
+#'
+#' @description
+#' A test proposed by (Teräsvirta and Yang, 2014).
+#'
+#' The null is that there is no serial correlation in the error term
+#' of the model.
+#'
+#' As it's claimed in (Teräsvirta and Yang, 2014), LM-type statistic suffers
+#' from size discrepancy that can lead to imcorrect results.
+#' So three other statistics with improved size can be calculated as well:
+#'
+#' * Rescaled LM by (Leitinen, 1978; Meisner, 1979).
+#' * Rao's F (see, Rao, 1951).
+#' * Bartlett's approximation of Wilks's \eqn{\Lambda}-statistic
+#' (see, Bartlett, 1954).
+#'
+#' @param dataset an object of S3-classes `vstar.data` or `vstar`.
+#' @param J a number of lags to be included in the test.
+#' @param stat.type a string or a vector of strings setting the statistics
+#' to be calculated and returned:
+#'
+#' * "all": calculate all statistics (default).
+#' * "LM": LM-type statistic only.
+#' * "r-LM": rescaled LM-statistic.
+#' * "Rao": Rao's F-statistic.
+#' * "Bartlett-Wilks": Bartlett's approximation of Wilks's \eqn{\Lambda}.
+#'
+#' @param ortogonalize is ortogonalizarion of residuals and \eqn{K} matrix
+#' should be used. Usually residuals \eqn{U} and \eqn{K} are not
+#' ortogonal, i.e. \eqn{UK \neq 0}. This can bias results of the test.
+#'
+#' @return
+#' A matrix containing the results in rows. Each row includes the value of
+#' the corresponding statistic, 1%, 5%, and 10% critical values, and
+#' the p-value.
+#'
+#' @references
+#' C. R. Rao,
+#' “An asymptotic expansion of the distribution of Wilk’s criterion,”
+#' Bulletin of the International Statistical Institute,
+#' vol. 33, no. 2, Art. no. 2, 1951.
+#'
+#' M. S. Bartlett,
+#' “A Note on the Multiplying Factors for Various χ2 Approximations,”
+#' Journal of the Royal Statistical Society. Series B (Methodological),
+#' vol. 16, no. 2, pp. 296–298, 1954.
+#'
+#' K. Laitinen,
+#' “Why is demand homogeneity so often rejected?,”
+#' Economics Letters,
+#' vol. 1, no. 3, pp. 187–191, Jan. 1978.
+#'
+#' J. F. Meisner,
+#' “The sad fate of the asymptotic Slutsky symmetry test for large systems,”
+#' Economics Letters,
+#' vol. 2, no. 3, pp. 231–233, Jan. 1979.
+#'
+#' T. Teräsvirta and Y. Yang,
+#' “Linearity and misspecification tests for vector smooth transition
+#' regression models,”
+#' Department of Economics and Business Economics, Aarhus University,
+#' 2014–04, Feb. 2014.
+#'
 #' @importFrom MASS ginv
 #' @importFrom matrixcalc matrix.trace
 #' @importFrom matrixcalc vec
 #'
 #' @export
 serial.correlation.test <- function(model, J = 1,
-                                    stat.type = "all", ortogonalize = TRUE) {
+                                    stat.type = "all",
+                                    ortogonalize = TRUE) {
     if (!"vstar" %in% class(model)) {
         stop("Wrong `model`: an object with estimated VSTAR model is needed!")
     }

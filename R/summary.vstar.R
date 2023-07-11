@@ -1,4 +1,10 @@
+#' @title
+#' Printing the results of the model estimation
+#'
+#' @param model an object of S3-class `vstar`.
+#'
 #' @keywords internal
+#'
 #' @export
 summary.vstar <- function(model, ...) {
     if (!"vstar" %in% class(model)) {

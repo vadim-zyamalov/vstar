@@ -1,6 +1,32 @@
+#' @title
+#' Get a set of estimated values
+#'
+#' @description
+#' An auxiliary function returning a set of estimated values of a model.
+#' Values are devectorized if needed.
+#'
+#' @param est a list containing the intermediate results of model estimation.
+#' This list emerges as a result of inner loops in functions for estimating
+#' VSTAR models (see \link{vstar.grid} and \link{vstar.nls}).
+#' @param dataset an object of S3-classes `vstar.data` or `vstar`.
+#' @param G.func a transition function to be used.
+#' NB: it's a function, not its destription!
+#'
+#' @return
+#' A list containing
+#' * A matrix of estimated coefficients.
+#' * A matrix of estimated coefficients standard devations.
+#' * A matrix of estimated coefficients t-statistics.
+#' * A matrix of fitted values.
+#' * A matrix of residuals.
+#' * An estimate of a covariance matrix.
+#' * The value of `g.function`.
+#'
 #' @importFrom MASS ginv
 #' @importFrom matrixcalc vec
-get.estimates <- function(est, dataset, g.function) {
+#'
+#' @keywords internal
+get.estimates <- function(est, dataset, G.func) {
     if (!any(c("vstar", "vstar.data") %in% class(dataset))) {
         stop("Wrong `model`: an object with prepared data or estimated model is needed!")
     }

@@ -1,3 +1,14 @@
+#' @title
+#' Extract estimated parameters from VSTAR model
+#'
+#' @param model an object of S3-class `vstar`.
+#'
+#' @return
+#' List containing:
+#' * matrix \eqn{B}.
+#' * vector of \eqn{\gamma} values.
+#' * vector of threshold values.
+#'
 #' @keywords internal
 #' @export
 coef.vstar <- function(model, ...) {
