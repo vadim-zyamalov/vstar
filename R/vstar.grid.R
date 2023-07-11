@@ -24,8 +24,11 @@ vstar.grid <- function(model,
     k <- model$dim$k
     N <- model$dim$N
 
+    if (!"vstar.data" %in% class(model)) {
+        stop("Wrong `model`: an object with prepared data is needed!")
+    }
     if (m < 2) {
-        stop("m too low: at least 2 regimes is needed!")
+        stop("`m` too low: at least 2 regimes is needed!")
     }
 
     G.func <- get.G.function(g.function)

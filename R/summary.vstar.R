@@ -1,6 +1,9 @@
 #' @keywords internal
 #' @export
 summary.vstar <- function(model, ...) {
+    if (!"vstar" %in% class(model)) {
+        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+    }
     if (!"coef" %in% names(model)) {
         stop("Estimate the model first!")
     }

@@ -3,8 +3,13 @@
 #' @importFrom matrixcalc vec
 #'
 #' @export
-nonlinearity.test <- function(model, J = 1) {
+nonlinearity.test <- function(model, J = 1, stat.type = "all") {
+    if (!"vstar" %in% class(model)) {
+        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+    }
+
     k  <- model$dim$k
+    m  <- model$dim$m
     N  <- model$dim$N
     Nx <- ncol(model$data$X)
 

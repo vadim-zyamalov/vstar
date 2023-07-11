@@ -1,5 +1,8 @@
 #' @importFrom matrixcalc vec
 get.K.mat <- function(model, J = 0) {
+    if (!"vstar" %in% class(model)) {
+        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+    }
     if (!"coef" %in% names(model)) {
         stop("K: Please, estimate the model first!")
     }

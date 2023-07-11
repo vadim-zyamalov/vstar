@@ -9,8 +9,12 @@ vstar.nls <- function(model,
                       iter = 10000,
                       algorithm = "default",
                       control = nls.control()) {
+    if (!"vstar" %in% class(model)) {
+        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+    }
+
     m <- model$dim$m
-    
+
     vec.y <- vec(t(model$data$Y))
     G.func <- get.G.function(model$g.function)
 

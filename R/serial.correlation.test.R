@@ -3,9 +3,16 @@
 #' @importFrom matrixcalc vec
 #'
 #' @export
-serial.correlation.test <- function(model, J = 1, ortogonalize = FALSE) {
+serial.correlation.test <- function(model, J = 1,
+                                    stat.type = "all", ortogonalize = TRUE) {
+    if (!"vstar" %in% class(model)) {
+        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+    }
+
     k  <- model$dim$k
+    m  <- model$dim$m
     N  <- model$dim$N
+    Nx <- ncol(model$data$X)
 
     Z <- NULL
     for (j in 1:J) {

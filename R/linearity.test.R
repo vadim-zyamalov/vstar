@@ -3,27 +3,33 @@
 #' @importFrom matrixcalc vec
 #'
 #' @export
-linearity.test <- function(model, J = 1) {
-    k  <- model$dim$k
-    N  <- model$dim$N
-    Nx <- ncol(model$data$X)
-
-    Xn <- NULL
-    for (j in 0:J) {
-        Xn <- cbind(Xn,
-                    (model$data$S^j %x% t(unity(Nx))) * model$data$X)
+linearity.test <- function(dataset, J = 1, stat.type = "all") {
+    if (!any(c("vstar", "vstar.data") %in% class(dataset))) {
+        stop("Wrong `model`: an object with prepared data or estimated model is needed!")
     }
 
-    vX0  <- model$data$X %x% diag(k)
-    vXn <- Xn %x% diag(k)
+    k  <- dataset$dim$k
+    N  <- dataset$dim$N
+    Nx <- ncol(dataset$data$X)
 
-    vE0 <- vec(t(model$data$Y)) -
-        vX0 %*% ginv(t(vX0) %*% vX0) %*% t(vX0) %*% vec(t(model$data$Y))
+    Zn <- NULL
+    for (j in 1:J) {
+        Zn <- cbind(Zn,
+                    (dataset$data$S^j %x% t(unity(Nx))) * dataset$data$X)
+    }
+
+    XZ <- cbind(dataset$data$X, Zn)
+
+    vX  <- dataset$data$X %x% diag(k)
+    vXZ <- XZ %x% diag(k)
+
+    vE0 <- vec(t(dataset$data$Y)) -
+        vX %*% ginv(t(vX) %*% vX) %*% t(vX) %*% vec(t(dataset$data$Y))
     E0 <- t(matrix(vE0, ncol = N))
     SSR0 <- t(E0) %*% E0
 
     vEn <- vE0 -
-        vXn %*% ginv(t(vXn) %*% vXn) %*% t(vXn) %*% vE0
+        vXZ %*% ginv(t(vXZ) %*% vXZ) %*% t(vXZ) %*% vE0
     En <- t(matrix(vEn, ncol = N))
     SSRn <- t(En) %*% En
 
