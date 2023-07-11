@@ -21,7 +21,7 @@ summary.vstar <- function(model, ...) {
 
     cat("Results of ", sum.func, "VSTAR model estimation\n\n", sep = "")
     cat("Number of regimes:     ", model$dim$m, "\n")
-    cat("Number of lags:        ", model$dim$p, "\n")
+    cat("Number of lags:        ", model$dim$p.fixed, "\n")
     cat("Number of observations:", model$dim$N, "\n")
     cat("Endogenous variables:\n", model$params$endo, "\n")
     if (!is.null(model$params$exog)) {
@@ -67,4 +67,10 @@ summary.vstar <- function(model, ...) {
 
     cat("\nResiduals covariance matrix:\n")
     print(model$cov)
+}
+
+#' @keywords internal
+#' @export
+print.vstar <- function(model, ...) {
+    summary(model)
 }

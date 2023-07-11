@@ -40,9 +40,7 @@
 #' @export
 vstar.nls <- function(model,
                       tol = 1e-6,
-                      iter = 10000,
-                      algorithm = "default",
-                      control = nls.control()) {
+                      iter = 100) {
     if (!"vstar" %in% class(model)) {
         stop("Wrong `model`: an object with estimated VSTAR model is needed!")
     }
