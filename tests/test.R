@@ -1,26 +1,9 @@
-#library(doSNOW)
-#library(foreach)
-#library(parallel)
-#library(utils)
-#library(arrangements)
-
 library(vstar)
-
-#source("D:/git/vstar/R/diffn.R", echo=TRUE)
-#source("D:/git/vstar/R/get.estimates.R", echo=TRUE)
-#source("D:/git/vstar/R/get.G.mat.R", echo=TRUE)
-#source("D:/git/vstar/R/get.grid.R", echo=TRUE)
-#source("D:/git/vstar/R/get.M.mat.R", echo=TRUE)
-#source("D:/git/vstar/R/lagn.R", echo=TRUE)
-#source("D:/git/vstar/R/unity.R", echo=TRUE)
-#source("D:/git/vstar/R/vstar.grid.R", echo=TRUE)
-#source("D:/git/vstar/R/vstar.prepare.R", echo=TRUE)
 
 N <- 1000
 
 x <- matrix(rnorm(2), nrow = 1)
 x <- cbind(x, 1)
-x0 <- x
 
 s <- rnorm(N)
 thr <- median(s)
@@ -47,21 +30,19 @@ for (k in 1:N) {
         x,
         cbind(t(t(PSI) %*% t(B) %*% t(x[nrow(x), , drop = FALSE]) + .01 * t(t(rnorm(2)))), 1)
     )
-    x0 <- rbind(
-        x0,
-        cbind(t(A1 %*% t(x0[nrow(x0), , drop = FALSE]) + .01 * t(t(rnorm(2)))), 1)
-    )
 }
 y <- x[52:(N + 1), 1:2, drop = FALSE]
-y0 <- x0[52:(N + 1), 1:2, drop = FALSE]
 colnames(y) <- c("y1", "y2")
-colnames(y0) <- c("y1", "y2")
 s <- s[52:(N + 1)]
-#y <- as.data.frame(y)
+
+y2 <- y[1:50, , drop = FALSE]
+s2 <- s[1:50]
 
 model <- vstar.prepare(endo = c("y1", "y2"), const = TRUE, p = 1, trans = s, dataset = y)
-model0 <- vstar.prepare(endo = c("y1", "y2"), const = TRUE, p = 1, trans = s, dataset = y0)
 
-res <- vstar.grid(model = model, m = 2, gamma.limits = c(0.1, 1), points = 10)
+res <- vstar.grid(dataset = model, m = 2, gamma.limits = c(0.1, 1), points = 10)
 
 res2 <- vstar.nls(res, tol = 1e-6)
+
+yf2 <- vstar:::predict.vstar(res2, y2, s2)
+
