@@ -122,7 +122,7 @@ vstar.prepare <- function(endo,
                    dim = dimensions,
                    data = data)
 
-    class(result) <- "vstar"
+    class(result) <- "vstar.data"
 
     return(result)
 }
