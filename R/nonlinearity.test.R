@@ -144,7 +144,7 @@ nonlinearity.test <- function(model, J = 1, stat.type = "all") {
         .df1 <- ncol(Zn) * k
         .df2 <- .N * .s - .5 * ncol(Zn) * k + 1
 
-        F.stat <- ((det(SSR0) / det(SSRn))^(1/.s) - 1) * (.df2 / .df1)
+        F.stat <- ((det(SSR0) / det(SSRn))^(1 / .s) - 1) * (.df2 / .df1)
 
         result <- rbind(
             result,
