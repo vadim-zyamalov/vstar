@@ -280,6 +280,16 @@ Setting \(Y = \left(y_1', \dots, y_Y'\right)'\) we can get
 
 Hence, we get \@ref(eq:nls-3).
 
+In the package the matrix \(M\) is built in more vectorized form to avoid loops as much as possible.
+
+The matrix \(M\) is defined as follows
+\[ M = \left[\left(\begin{array}{c|ccc}
+    1 & g_1(s_1) & \dots & g_{m-1}(s_1) \\
+    \vdots & \vdots & & \vdots \\
+    1 & g_1(s_T) & \dots & g_{m-1}(s_T) \end{array}\right) \otimes I_k \otimes e_{kp+q}' \right] \times \left[e_{km}' \otimes X \otimes e_k\right] \]
+where \(g_k(s) = g(s \mid \gamma_k, c_k\), \(e_N = (\underbrace{1, \dots, 1}_N)'\).
+\(\times\) denotes element-wise product.
+
 ## The analysis of \@ref(eq:nls-3)
 
 It may seem that \@ref(eq:nls-3) is not compatible with element-wise estimation of the system. But that's not the case.
@@ -298,7 +308,7 @@ we'll see that this final sum can be split into two separate sums, each of them 
 
 So minimization of the joint sum is equivalent to the separate minimization of these separate sums. And that's exactly the equation-wise estimation of the system.
 
-# Practical example
+# Practical Example
 
 Let's try to apply methods in `vstar` package to the "real" data. First, we load the package into the namespace.
 
@@ -316,70 +326,71 @@ We'll generate several sets of 1000 observations of 2 variables:
 - data with two regimes and autoregression in errors;
 - data with two regimes and nonstable coefficients.
 
-All model include constant.
-
 ```{r}
 N <- 1000
 ```
 
 We'll use a white noise as a common transitional variable for all nonlinear models.
 Two-regime model uses median as a threshold.
-Three-regime uses 45-th and 55-th quantiles.
+Three-regime uses 33-rd and 67-th quantiles as threshold values.
 
 ```{r}
 s <- rnorm(N)
 
 thr_2reg <- median(s)
-thr_3reg <- quantile(s, prob = c(.45, .55))
-
-s <- matrix(c(NA, s), ncol = 1)
+thr_3reg <- quantile(s, prob = c(.33, .67))
 
 print(thr_2reg)
 print(thr_3reg)
 ```
 
 We'll generate arrays of transition function values \(\gamma\) and \(c\).
-In our case \(\gamma = 0.5\).
+In our case \(\gamma_1 = \gamma_2 = 4\).
 The logistic function will be used as the transition one.
 
 ```{r}
 G.func <- vstar:::get.G.function("L")
 
 sm <- s %x% t(vstar:::unity(1))
-gm <- vstar:::unity(N + 1) %x% t(.5)
-cm <- vstar:::unity(N + 1) %x% t(thr_2reg)
+gm <- vstar:::unity(N) %x% t(4)
+cm <- vstar:::unity(N) %x% t(thr_2reg)
 
 G.mat_2reg <- G.func(sm, gm, cm)
-G.mat_2reg <- G.mat_2reg[-1, ,drop = FALSE]
 
 sm <- s %x% t(vstar:::unity(2))
-gm <- vstar:::unity(N + 1) %x% t(c(.5, .5))
-cm <- vstar:::unity(N + 1) %x% t(thr_3reg)
+gm <- vstar:::unity(N) %x% t(c(4, 4))
+cm <- vstar:::unity(N) %x% t(thr_3reg)
 
 G.mat_3reg <- G.func(sm, gm, cm)
-G.mat_3reg <- G.mat_3reg[-1, ,drop = FALSE]
+```
+
+```{r}
+library(ggplot2)
+
+ggplot(mapping = aes(x = s)) +
+    geom_line(mapping = aes(y = G.mat_2reg)) + 
+    labs(x = "Transition variable", y = "Transition functions")
+
+ggplot(mapping = aes(x = s)) + 
+    geom_line(mapping = aes(y = G.mat_3reg[,1], colour = "1")) + 
+    geom_line(mapping = aes(y = G.mat_3reg[,2], colour = "2")) + 
+    labs(x = "Transition variable", y = "Transition functions") + 
+    scale_colour_manual(name = "G", values = c("blue", "red"))
 ```
 
 We'll use the following matrices to generate our data
 \begin{gather*}
-A_1' = \left(\matrix{.5 & .2 \\ -.3 & .1}\right) \\
-\Phi_1' = \left(\matrix{.1 \\ .2}\right) \\
-A_2' = \left(\matrix{.2 & -.8 \\ .3 & .8}\right) \\
-\Phi_2' = \left(\matrix{.2 \\ .1}\right) \\
-A_3' = \left(\matrix{-.3 & .1 \\ .2 & .2}\right) \\
-\Phi_3' = \Phi_2'
+A_1' = \left(\matrix{.5 & 0 \\ 0 & .5}\right) \\
+A_2' = \left(\matrix{.8 & .1 \\ .1 & .8}\right) \\
+A_3' = \left(\matrix{-.5 & 0 \\ 0 & -.5}\right) \\
 \end{gather*}
-We also construct a \(B\) matrix.
+We also construct a \(B\) matrices for 2 regime model, 3 regime model,
+and a model with changing coefficients.
 
 ```{r}
-A1 <- matrix(c(.5, -.3, .2, .1), ncol = 2)
-A1 <- cbind(A1, t(t(c(.1, .2))))
-
-A2 <- matrix(c(.2, .3, -.8, .8), ncol = 2)
-A2 <- cbind(A2, t(t(c(.2, .1))))
-
-A3 <- matrix(c(-.3, .2, .1, .2), ncol = 2)
-A3 <- cbind(A3, t(t(c(.2, .1))))
+A1 <- .5 * diag(2)
+A2 <- matrix(c(.8, .1, .1, .8), ncol = 2)
+A3 <- -.5 * diag(2)
 
 B_2reg <- cbind(t(A1), t(A2))
 B_2reg_alt <- cbind(t(A1), t(A3))
@@ -388,61 +399,56 @@ B_3reg <- cbind(t(A1), t(A2), t(A3))
 
 Initial values for all sets of variables are drawn from standard normal distribution.
 After data generation we delete first 50 observations to eliminate the period of achieving the stable level.
-We use normal random variable multiplied by 0.001 as the error term.
-We multiply it to prevent it from suppressing the main data yet still introducing randomness.
 
-First we generate variables without any nonlinearity using \(A_1\) and \(\Phi_1\).
+First we generate variables without any nonlinearity using \(A_1\).
 
 ```{r}
-y0 <- matrix(0, ncol = 2, nrow = 1001)
-y0[1, ] <- rnorm(2)
-y0 <- cbind(y0, 1)
+y.lin <- matrix(0, ncol = 2, nrow = 1001)
+y.lin[1, ] <- rnorm(2)
 
 for (k in 1:N) {
-    y0[k + 1, ] <- 
-        cbind(t(A1 %*% t(y0[k, , drop = FALSE]) + .001 * t(t(rnorm(2)))), 1)
+    y.lag <- y.lin[k, , drop = FALSE]
+    y.lin[k + 1, ] <- t(A1 %*% t(y.lag) + rnorm(2))
 }
 
-y0 <- y0[52:(N + 1), 1:2, drop = FALSE]
-colnames(y0) <- c("y1", "y2")
+y.lin <- y.lin[52:(N + 1), 1:2]
+colnames(y.lin) <- c("y1", "y2")
 
-plot.ts(y0)
+plot.ts(y.lin)
 ```
 
 Then we generate a model with two regimes.
 
 ```{r}
-y1 <- matrix(0, ncol = 2, nrow = 1001)
-y1[1, ] <- rnorm(2)
-y1 <- cbind(y1, 1)
+y.2reg <- matrix(0, ncol = 2, nrow = 1001)
+y.2reg[1, ] <- rnorm(2)
 
 for (k in 1:N) {
+    y.lag <- y.2reg[k, , drop = FALSE]
     PSI <- t(t(c(1, G.mat_2reg[k, ]))) %x% diag(2)
-    y1[k + 1, ] <-
-        cbind(t(t(PSI) %*% t(B_2reg) %*% t(y1[k, , drop = FALSE]) + .001 * t(t(rnorm(2)))), 1)
+    y.2reg[k + 1, ] <- t(t(PSI) %*% t(B_2reg) %*% t(y.lag) + rnorm(2))
 }
-y1 <- y1[52:(N + 1), 1:2, drop = FALSE]
-colnames(y1) <- c("y1", "y2")
+y.2reg <- y.2reg[52:(N + 1), 1:2, drop = FALSE]
+colnames(y.2reg) <- c("y1", "y2")
 
-plot.ts(y1)
+plot.ts(y.2reg)
 ```
 
 Then we generate a model with three regimes.
 
 ```{r}
-y2 <- matrix(0, ncol = 2, nrow = 1001)
-y2[1, ] <- rnorm(2)
-y2 <- cbind(y2, 1)
+y.3reg <- matrix(0, ncol = 2, nrow = 1001)
+y.3reg[1, ] <- rnorm(2)
 
 for (k in 1:N) {
+    y.lag <- y.3reg[k, , drop = FALSE]
     PSI <- t(t(c(1, G.mat_3reg[k, ]))) %x% diag(2)
-    y2[k + 1, ] <-
-        cbind(t(t(PSI) %*% t(B_3reg) %*% t(y2[k, , drop = FALSE]) + .001 * t(t(rnorm(2)))), 1)
+    y.3reg[k + 1, ] <- t(t(PSI) %*% t(B_3reg) %*% t(y.lag) + rnorm(2))
 }
-y2 <- y2[52:(N + 1), 1:2, drop = FALSE]
-colnames(y2) <- c("y1", "y2")
+y.3reg <- y.3reg[52:(N + 1), 1:2, drop = FALSE]
+colnames(y.3reg) <- c("y1", "y2")
 
-plot.ts(y2)
+plot.ts(y.3reg)
 ```
 
 Then we generate a model with two regimes and autoregression of errors.
@@ -450,101 +456,96 @@ We'll use the following error process:
 \[\varepsilon_t = \left(\matrix{.8 & 0 \\ 0 & .8}\right)\varepsilon_{t-1} + \nu_t\]
 
 ```{r}
-y3 <- matrix(0, ncol = 2, nrow = 1001)
-y3[1, ] <- rnorm(2)
-y3 <- cbind(y3, 1)
+y.acorr <- matrix(0, ncol = 2, nrow = 1001)
+y.acorr[1, ] <- rnorm(2)
 
 e <- matrix(rnorm(2002), ncol = 2)
 
 for (k in 1:N) {
+    y.lag <- y.acorr[k, , drop = FALSE]
     e[k + 1, ] <- e[k + 1, ] + .8 * e[k, ]
     PSI <- t(t(c(1, G.mat_2reg[k, ]))) %x% diag(2)
-    y3[k + 1, ] <-
-        cbind(t(t(PSI) %*% t(B_2reg) %*% t(y3[k, , drop = FALSE]) + .001 * t(e[k + 1, , drop = FALSE])), 1)
+    y.acorr[k + 1, ] <- t(t(PSI) %*% t(B_2reg) %*% t(y.lag) +
+                              t(e[k + 1, , drop = FALSE]))
 }
-y3 <- y3[52:(N + 1), 1:2, drop = FALSE]
-colnames(y3) <- c("y1", "y2")
+y.acorr <- y.acorr[52:(N + 1), 1:2, drop = FALSE]
+colnames(y.acorr) <- c("y1", "y2")
 
-plot.ts(y3)
+plot.ts(y.acorr)
 ```
 
 Then we generate a model with two regimes.
 But after the period 525 in the second regime \(A_3\) is used instead of \(A_2\).
 
 ```{r}
-y4 <- matrix(0, ncol = 2, nrow = 1001)
-y4[1, ] <- rnorm(2)
-y4 <- cbind(y4, 1)
+y.chcoef <- matrix(0, ncol = 2, nrow = 1001)
+y.chcoef[1, ] <- rnorm(2)
 
 for (k in 1:N) {
+    y.lag <- y.chcoef[k, , drop = FALSE]
     PSI <- t(t(c(1, G.mat_2reg[k, ]))) %x% diag(2)
     if (k <= 525) {
-        y4[k + 1, ] <-
-            cbind(t(t(PSI) %*% t(B_2reg) %*% t(y4[k, , drop = FALSE]) + .001 * t(t(rnorm(2)))), 1)
+        y.chcoef[k + 1, ] <- t(t(PSI) %*% t(B_2reg) %*% t(y.lag) +
+                                   rnorm(2))
     } else {
-        y4[k + 1, ] <-
-            cbind(t(t(PSI) %*% t(B_2reg_alt) %*% t(y4[k, , drop = FALSE]) + .001 * t(t(rnorm(2)))), 1)
+        y.chcoef[k + 1, ] <- t(t(PSI) %*% t(B_2reg_alt) %*% t(y.lag) +
+                                   rnorm(2))
     }
 }
-y4 <- y4[52:(N + 1), 1:2, drop = FALSE]
-colnames(y4) <- c("y1", "y2")
+y.chcoef <- y.chcoef[52:(N + 1), 1:2, drop = FALSE]
+colnames(y.chcoef) <- c("y1", "y2")
 
-plot.ts(y4)
+plot.ts(y.chcoef)
 ```
 
 And we should trim \(s\) to match the generated data.
 
 ```{r}
-s <- s[52:(N + 1), , drop = FALSE]
+s <- s[51:N]
 ```
 
 ## Data prepairing and linearity tests
 
-First we should prepare data needed for 
+First we should prepare data needed for
 
 ```{r}
-model0 <- vstar.prepare(endo = c("y1", "y2"),
-                        const = TRUE,
-                        p = 1,
-                        trans = s,
-                        dataset = y0)
-model1 <- vstar.prepare(endo = c("y1", "y2"),
-                        const = TRUE,
-                        p = 1,
-                        trans = s,
-                        dataset = y1)
-model2 <- vstar.prepare(endo = c("y1", "y2"),
-                        const = TRUE,
-                        p = 1,
-                        trans = s,
-                        dataset = y2)
-model3 <- vstar.prepare(endo = c("y1", "y2"),
-                        const = TRUE,
-                        p = 1,
-                        trans = s,
-                        dataset = y3)
-model4 <- vstar.prepare(endo = c("y1", "y2"),
-                        const = TRUE,
-                        p = 1,
-                        trans = s,
-                        dataset = y4)
+model.lin <- vstar.prepare(endo = c("y1", "y2"),
+                           p = 1,
+                           trans = s,
+                           dataset = y.lin)
+model.2reg <- vstar.prepare(endo = c("y1", "y2"),
+                            p = 1,
+                            trans = s,
+                            dataset = y.2reg)
+model.3reg <- vstar.prepare(endo = c("y1", "y2"),
+                            p = 1,
+                            trans = s,
+                            dataset = y.3reg)
+model.acorr <- vstar.prepare(endo = c("y1", "y2"),
+                             p = 1,
+                             trans = s,
+                             dataset = y.acorr)
+model.chcoef <- vstar.prepare(endo = c("y1", "y2"),
+                              p = 1,
+                              trans = s,
+                              dataset = y.chcoef)
 ```
 
-The `model` and `model0` are objects of S3-class `vstar`. They contain nearly all parameters of the model except for the transition function.
+The `model` and `model.lin` are objects of S3-class `vstar`. They contain nearly all parameters of the model except for the transition function.
 
-Lets run a linearity tests. First we'll test `model0` with 1 lag of the transition variable.
+Lets run a linearity tests. First we'll test `model.lin` with 1 lag of the transition variable.
 
 ```{r}
-linearity.test(model0, J = 1)
+linearity.test(model.lin, J = 1)
 ```
 
-And let's compare the result with the one of testing `model1`--`model4`.
+And let's compare the result with the one of testing `model.2reg`--`model.chcoef`.
 
 ```{r}
-linearity.test(model1, J = 1)
-linearity.test(model2, J = 1)
-linearity.test(model3, J = 1)
-linearity.test(model4, J = 1)
+round(linearity.test(model.2reg, J = 1), 4)
+round(linearity.test(model.3reg, J = 1), 4)
+round(linearity.test(model.acorr, J = 1), 4)
+round(linearity.test(model.chcoef, J = 1), 4)
 ```
 
 We see the rejection the null of linearity for nonlinear models.
@@ -554,43 +555,43 @@ Details on these tests you can see [below](#diagnostics).
 
 Then we call a function for a grid search of the NLS starting values. We should provide grid limits for \(\gamma\), the corresponding limits for \(c\) are computed automatically from the \(s\) variable observations.
 
-For now we will estimate all nonlinear models as two-regime models, even `model2`!
+For now we will estimate all nonlinear models as two-regime models, even `model.3reg`!
 
 ```{r, results = FALSE}
-result1 <- vstar.grid(dataset = model1,
-                      m = 2,
-                      gamma.limits = c(0.1, 1),
-                      points = 100)
-result2 <- vstar.grid(dataset = model2,
-                      m = 2,
-                      gamma.limits = c(0.1, 1),
-                      points = 100)
-result3 <- vstar.grid(dataset = model3,
-                      m = 2,
-                      gamma.limits = c(0.1, 1),
-                      points = 100)
-result4 <- vstar.grid(dataset = model4,
-                      m = 2,
-                      gamma.limits = c(0.1, 1),
-                      points = 100)
+result.2reg <- vstar.grid(dataset = model.2reg,
+                          m = 2,
+                          gamma.limits = c(3, 5),
+                          points = 200)
+result.3reg <- vstar.grid(dataset = model.3reg,
+                          m = 2,
+                          gamma.limits = c(3, 5),
+                          points = 200)
+result.acorr <- vstar.grid(dataset = model.acorr,
+                           m = 2,
+                           gamma.limits = c(3, 5),
+                           points = 200)
+result.chcoef <- vstar.grid(dataset = model.chcoef,
+                            m = 2,
+                            gamma.limits = c(3, 5),
+                            points = 200)
 ```
 
 Then we pass the resulting object to the NLS.
 
 ```{r}
-result.nls1 <- vstar.nls(result1, tol = 1e-6)
-result.nls2 <- vstar.nls(result2, tol = 1e-6)
-result.nls3 <- vstar.nls(result3, tol = 1e-6)
-result.nls4 <- vstar.nls(result4, tol = 1e-6)
+result.nls.2reg   <- vstar.nls(result.2reg, tol = 1e-6)
+result.nls.3reg   <- vstar.nls(result.3reg, tol = 1e-6)
+result.nls.acorr  <- vstar.nls(result.acorr, tol = 1e-6)
+result.nls.chcoef <- vstar.nls(result.chcoef, tol = 1e-6)
 ```
 
 And finally, print the summary.
 
 ```{r}
-summary(result.nls1)
-summary(result.nls2)
-summary(result.nls3)
-summary(result.nls4)
+summary(result.nls.2reg)
+summary(result.nls.3reg)
+summary(result.nls.acorr)
+summary(result.nls.chcoef)
 ```
 
 ## Diagnostics {#diagnostics}
@@ -617,28 +618,28 @@ By default, all of these are calculated and returned.
 First, we test our models for the residual nonlinearity.
 
 ```{r}
-nonlinearity.test(result.nls1, J = 3)
-nonlinearity.test(result.nls2, J = 3)
-nonlinearity.test(result.nls3, J = 3)
-nonlinearity.test(result.nls4, J = 3)
+round(nonlinearity.test(result.nls.2reg, J = 3), 4)
+round(nonlinearity.test(result.nls.3reg, J = 3), 4)
+round(nonlinearity.test(result.nls.acorr, J = 3), 4)
+round(nonlinearity.test(result.nls.chcoef, J = 3), 4)
 ```
 
 First, we test our models for the serial correlation in errors.
 
 ```{r}
-serial.correlation.test(result.nls1, J = 1, ortogonalize = TRUE)
-serial.correlation.test(result.nls2, J = 1, ortogonalize = TRUE)
-serial.correlation.test(result.nls3, J = 1, ortogonalize = TRUE)
-serial.correlation.test(result.nls4, J = 1, ortogonalize = TRUE)
+round(serial.correlation.test(result.nls.2reg, J = 1, ortogonalize = TRUE), 4)
+round(serial.correlation.test(result.nls.3reg, J = 1, ortogonalize = TRUE), 4)
+round(serial.correlation.test(result.nls.acorr, J = 1, ortogonalize = TRUE), 4)
+round(serial.correlation.test(result.nls.chcoef, J = 1, ortogonalize = TRUE), 4)
 ```
 
-Finally, we test our models for the stability of coefficirnts.
+Finally, we test our models for the stability of coefficients.
 
 ```{r}
-stability.test(result.nls1)
-stability.test(result.nls2)
-stability.test(result.nls3)
-stability.test(result.nls4)
+round(stability.test(result.nls.2reg), 4)
+round(stability.test(result.nls.3reg), 4)
+round(stability.test(result.nls.acorr), 4)
+round(stability.test(result.nls.chcoef), 4)
 ```
 
 # References {-}
