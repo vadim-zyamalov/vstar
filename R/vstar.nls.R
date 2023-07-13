@@ -21,6 +21,7 @@
 #' @param tol a level of tolerance. If the vector of \eqn{\gamma} and \eqn{c}
 #' changes less than this value the process stops.
 #' @param iter the maximum number of iterations.
+#' @param verbose should intermediate steps be shown?
 #'
 #' @return
 #' An object of S3-class `vstar`. See \link{vstar.grid} for details.
@@ -66,21 +67,21 @@ vstar.nls <- function(model,
     converged <- FALSE
 
     for (step in 1:iter) {
-        cat(step, "\n")
-        #iter.nls <- nls(vec.y ~ yf(gx, cx),
-        #                start = list(gx = iter.g, cx = iter.c),
-        #                algorithm = algorithm,
-        #                control = control)
+        if (verbose) {
+            cat("Step ", step, ": ", sep = "")
+        }
 
-        #result <- coef(iter.nls)
         iter.nls <- optim(c(iter.g, iter.c), Q)
         result <- iter.nls$par
 
         dd <- result - c(iter.g, iter.c)
+        delta <- sqrt(dd %*% dd)
 
-        #iter.g <- result[startsWith(names(result), "gx")]
+        if (verbose) {
+            cat("delta = ", delta, "\n", sep = "")
+        }
+
         iter.g <- result[1:(m - 1)]
-        #iter.c <- result[startsWith(names(result), "cx")]
         iter.c <- result[m:length(result)]
 
         iter.BM <- get.B.mat(model, m, iter.g, iter.c, G.func)
@@ -98,10 +99,6 @@ vstar.nls <- function(model,
         cat("Possible absence of convergence!\n")
     }
 
-    #nls.summary <- summary(iter.nls)
-    #g.sd <- nls.summary$coefficients[, 2][names(iter.g)]
-    #c.sd <- nls.summary$coefficients[, 2][names(iter.c)]
-
     nls.result <- list(vec.B = iter.BM$vec.B,
                        vec.E = vec.y - iter.BM$M %*% iter.BM$vec.B,
                        M = iter.BM$M,
@@ -109,9 +106,7 @@ vstar.nls <- function(model,
                                 model$estimates$vec.E),
                        m = m,
                        g = iter.g,
-                       #g.sd = g.sd,
                        c = iter.c)
-                       #c.sd = c.sd)
 
     final.est <- get.estimates(nls.result, model, model$g.function)
 
@@ -119,9 +114,7 @@ vstar.nls <- function(model,
                    sd = final.est$sd,
                    t.stat = final.est$t.stat,
                    g = iter.g,
-                   #g.sd = g.sd,
                    c = iter.c,
-                   #c.sd = c.sd,
                    fitted.values = final.est$fitted.values,
                    residuals = final.est$residuals,
                    cov = final.est$cov,

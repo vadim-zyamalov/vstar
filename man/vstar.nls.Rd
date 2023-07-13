@@ -4,7 +4,7 @@
 \alias{vstar.nls}
 \title{Improve VSTAR estimates using NLS}
 \usage{
-vstar.nls(model, tol = 1e-06, iter = 100)
+vstar.nls(model, tol = 1e-06, iter = 100, verbose = FALSE)
 }
 \arguments{
 \item{model}{an object of S3-classes \code{vstar}.}
@@ -13,6 +13,8 @@ vstar.nls(model, tol = 1e-06, iter = 100)
 changes less than this value the process stops.}
 
 \item{iter}{the maximum number of iterations.}
+
+\item{verbose}{should intermediate steps be shown?}
 }
 \value{
 An object of S3-class \code{vstar}. See \link{vstar.grid} for details.
