@@ -12,7 +12,8 @@ vstar.grid(
   gamma.limits = c(0.1, 100),
   points = 200,
   trim = 0.15,
-  gap = 0.1
+  gap = 0.1,
+  cores = 1
 )
 }
 \arguments{
@@ -51,6 +52,10 @@ Affects only the \eqn{c} part of the grid.}
 \item{gap}{a number (if greater than 1) or a share of minimum distance
 between two values of \eqn{c} in grid.
 Used only if \eqn{m > 2}.}
+
+\item{cores}{a number of cores to be used.
+If greater than 1 then a grid search will be done in parallel.
+The number of cores has the upper bound of processor cores number minus 1.}
 }
 \value{
 An object of S3-class \code{vstar} containing
@@ -74,6 +79,10 @@ NB: these are function bodies!
 \description{
 This function estimates the parameters of VSTAR model using
 the provided \code{vstar.data} object with the data prepared.
+
+The parameters \eqn{\gamma} and \eqn{c} are estimated by grid search.
+If \code{cores} is set to the value bigger than 1 then parallelization with
+\code{SNOW} backend is used.
 }
 \details{
 As stated by (Teräsvirta and Yang, 2014), estimating VSTAR directly by NLS

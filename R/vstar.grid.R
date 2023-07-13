@@ -5,6 +5,10 @@
 #' This function estimates the parameters of VSTAR model using
 #' the provided `vstar.data` object with the data prepared.
 #'
+#' The parameters \eqn{\gamma} and \eqn{c} are estimated by grid search.
+#' If `cores` is set to the value bigger than 1 then parallelization with
+#' `SNOW` backend is used.
+#'
 #' @details
 #'
 #' As stated by (Teräsvirta and Yang, 2014), estimating VSTAR directly by NLS
@@ -63,6 +67,9 @@
 #' @param gap a number (if greater than 1) or a share of minimum distance
 #' between two values of \eqn{c} in grid.
 #' Used only if \eqn{m > 2}.
+#' @param cores a number of cores to be used.
+#' If greater than 1 then a grid search will be done in parallel.
+#' The number of cores has the upper bound of processor cores number minus 1.
 #'
 #' @return
 #' An object of S3-class `vstar` containing
@@ -96,7 +103,8 @@ vstar.grid <- function(dataset,
                        gamma.limits = c(.1, 100),
                        points = 200,
                        trim = .15,
-                       gap = .1) {
+                       gap = .1,
+                       cores = 1) {
 
     p <- dataset$dim$p
     p.fixed <- dataset$dim$p.fixed
@@ -130,54 +138,53 @@ vstar.grid <- function(dataset,
                           c(min.c, max.c),
                           points)
 
-    progress.bar <- txtProgressBar(max = ncombinations(n = points,
-                                                       k = m - 1),
-                                   style = 3)
-    progress <- function(n) setTxtProgressBar(progress.bar, n)
+    iterations <- ncombinations(n = points, k = m - 1) *
+        npermutations(n = points, k = m - 1)
 
-    cores <- detectCores()
-    cluster <- makeCluster(max(cores - 1, 1), type = "SOCK")
+    pb <- progress_bar$new(
+        format = ":percent [:bar] :elapsed | ETA: :eta",
+        total = iterations,
+        width = 60
+    )
+    progress <- function(n) pb$tick()
+
+    combine <- function(A, B) if (A$SSR < B$SSR) A else B # nolint
+
+    cluster <- makeCluster(min(cores, detectCores() - 1), type = "SOCK")
     registerDoSNOW(cluster)
 
     c.iter <- icombinations(n = points, k = m - 1)
+    g.iter <- ipermutations(n = points, k = m - 1)
 
     grid.result <- foreach(cc = c.iter,
-                           .combine = function(A, B) {
-                               if (A$SSR < B$SSR) A else B
-                           },
+                           .combine = "combine",
                            .packages = c("arrangements", "foreach", "vstar"),
-                           .options.snow = list(progress = progress)) %dopar% {
+                           .options.snow = list(progress = progress))  %:%
+                   foreach(gg = g.iter,
+                           .combine = "combine") %dopar% {
         cc <- drop(cc)
+        gg <- drop(gg)
 
         if (length(cc) > 1 && !all(diff(cc) > gap)) {
             list(SSR = Inf)
         }
 
         c.vals <- grid.data$c[cc]
-        g.iter <- ipermutations(n = points, k = m - 1)
+        g.vals <- grid.data$g[gg]
 
-        foreach(gg = g.iter,
-                     .combine = function(A, B) {
-                        if (A$SSR < B$SSR) A else B
-                     }) %do% {
-            gg <- drop(gg)
+        BM <- get.B.mat(dataset, m, g.vals, c.vals, G.func)
 
-            g.vals <- grid.data$g[gg]
+        vec.E  <- vec(t(dataset$data$Y)) - BM$M %*% BM$vec.B
 
-            BM <- get.B.mat(dataset, m, g.vals, c.vals, G.func)
+        SSR <- drop(t(vec.E) %*% vec.E)
 
-            vec.E  <- vec(t(dataset$data$Y)) - BM$M %*% BM$vec.B
-
-            SSR <- drop(t(vec.E) %*% vec.E)
-
-            list(vec.B = BM$vec.B,
-                 vec.E = vec.E,
-                 M = BM$M,
-                 SSR = SSR,
-                 m = m,
-                 g = g.vals,
-                 c = c.vals)
-        }
+        list(vec.B = BM$vec.B,
+             vec.E = vec.E,
+             M = BM$M,
+             SSR = SSR,
+             m = m,
+             g = g.vals,
+             c = c.vals)
     }
 
     stopCluster(cluster)
