@@ -158,8 +158,8 @@ vstar.grid <- function(dataset,
 
     grid.result <- foreach(cc = c.iter,
                            .combine = "combine",
-                           .packages = c("arrangements", "foreach", "vstar"),
-                           .options.snow = list(progress = progress))  %:%
+                           .packages = c("vstar"),
+                           .options.snow = list(progress = progress)) %:%
                    foreach(gg = g.iter,
                            .combine = "combine") %dopar% {
         cc <- drop(cc)
