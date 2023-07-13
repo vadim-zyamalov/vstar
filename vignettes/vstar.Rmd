@@ -19,14 +19,18 @@ header-includes:
   - \newcommand{\vech}{\operatorname{vech}}
 vignette: >
   %\VignetteIndexEntry{vstar}
-  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEngine{knitr::rmarkdown_notangle}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
+is_check <- ("CheckExEnv" %in% search()) || any(c("_R_CHECK_TIMINGS_",
+             "_R_CHECK_LICENSE_") %in% names(Sys.getenv()))
 knitr::opts_chunk$set(
+  eval = !is_check,
   collapse = TRUE,
-  comment = "#>"
+  comment = "#>",
+  fig.width = 14
 )
 ```
 
@@ -35,7 +39,7 @@ knitr::opts_chunk$set(
 ## Univariate models
 
 The package `vstar` is designed to estimate Vector Smooth Transition Autoregression models.
-This class of models is a multivariate generalization of ounivariate STAR models by [@terasvirta1994specification].
+This class of models is a multivariate generalization of univariate STAR models by [@terasvirta1994specification].
 The simplest STAR model may be written in the following form [see, @vandijk2000smooth]
 \begin{equation}
 y_t = \phi_1' x_t + (\phi_2 - \phi_1)' x_t g(s_t \mid \gamma, c) + \varepsilon_t
@@ -45,15 +49,27 @@ where \(x_t\) is a vector of all RHS variables of the model including lags of \(
 exogenous variables, the intercept, the trend, seasonal components, etc.
 Following [@rothman1999multivariate], cointegration relations can also be included to
 the list of exogenous variables.
+
 \(g(s_t \mid \gamma, c)\) is the so-called transition function.
 It should be bounded between 0 and 1. \(s_t\) is a transition variable,
 \(\gamma\) is a smoothness of the transition between two regimes, and \(c\) is a threshold
 value such that \(g(c \mid \gamma, c) = 1/2\).
 
-Of course, \((\phi_2 -\phi_1)\) can be substituted by \(\tilde\phi_2\) for the ease of the model
-representation.
+Of course, \((\phi_2 -\phi_1)\) can be substituted by \(\tilde\phi_2\) for the ease of the model representation.
 
-The obvious generalization of the \@ref(eq:star-1) is the multi-regime STAR
+The model \@ref(eq:star-1) can be interpreted the following way.
+In each of the regimes we have the separate autoregressive model.
+Using the transition function we can form a weighted sum of these
+separate models, "mixing" these model with each other.
+In \@ref(eq:star-1) \(\phi_1\) represents coefficients of the first regime's model,
+\(\tilde\phi_2 = \phi_2 - \phi_1\) is a difference between the models of the 
+second and first regimes.
+If \(g(\dots) \rightarrow 0\) then we are in the first regime with the corresponding
+coefficients \(\phi_1\).
+If \(g(\dots) \rightarrow 1\) then we are in the second regime with with the corresponding
+coefficients \(\phi_2\).
+
+The obvious generalization of the \@ref(eq:star-1) is the multiregime STAR
 \begin{equation}
 y_t = \phi_1' x_t + \tilde\phi_2' x_t g(s_t \mid \gamma_1, c_1) + \tilde\phi_3' x_t g(s_t \mid \gamma_2, c_2) + \dots + \varepsilon_t
 (\#eq:star-2)
@@ -68,7 +84,7 @@ with \(\gamma > 0\) in both cases.
 
 ## Multivariate models
 
-If we go further then the next obvious generalization of \@ref(eq:star-2) is the multivariate STAR [@camacho2004vector,@terasvirta2014specification].
+If we go further then the next obvious generalization of \@ref(eq:star-2) is the multivariate STAR [@camacho2004vector;@terasvirta2014specification].
 We start with the single regime VAR(p) model
 \begin{equation}
 y_{t}=A_{1}'y_{t-1}+A_{2}'y_{t-2}+\dots+A_{p}'y_{t-p}+\Phi'd_{t}+\varepsilon_{t}
@@ -98,7 +114,7 @@ G^0_t & = I_k \nonumber \\
 G^m_t & = 0 \nonumber
 \end{align}
 
-\@ref(eq:vstar-3) can be re-parametrized as
+\@ref(eq:vstar-3) can be reparametrized as
 \begin{align}
 y_t & = \left( B_1' + G^1_t B_2' + \dots + G^{m-1}_t B_m' \right) x_t + \varepsilon_t (\#eq:vstar-4) \\
 \varepsilon_t & \sim WN(0, \Omega) \nonumber \\
@@ -555,43 +571,102 @@ Details on these tests you can see [below](#diagnostics).
 
 Then we call a function for a grid search of the NLS starting values. We should provide grid limits for \(\gamma\), the corresponding limits for \(c\) are computed automatically from the \(s\) variable observations.
 
-For now we will estimate all nonlinear models as two-regime models, even `model.3reg`!
+For now we will estimate all nonlinear models as two-regime models, even `model.3reg`.
+We'll use this obviously incorrect estimate to demonstrate the residual
+nonlinearity test.
+
+First, starting values for NLS are obtained by grid search.
 
 ```{r, results = FALSE}
 result.2reg <- vstar.grid(dataset = model.2reg,
                           m = 2,
                           gamma.limits = c(3, 5),
-                          points = 200)
-result.3reg <- vstar.grid(dataset = model.3reg,
-                          m = 2,
-                          gamma.limits = c(3, 5),
-                          points = 200)
-result.acorr <- vstar.grid(dataset = model.acorr,
-                           m = 2,
-                           gamma.limits = c(3, 5),
-                           points = 200)
-result.chcoef <- vstar.grid(dataset = model.chcoef,
-                            m = 2,
-                            gamma.limits = c(3, 5),
-                            points = 200)
+                          points = 200,
+                          cores = 10)
 ```
 
-Then we pass the resulting object to the NLS.
+Then, more precise estimates are got by NLS.
 
 ```{r}
-result.nls.2reg   <- vstar.nls(result.2reg, tol = 1e-6)
-result.nls.3reg   <- vstar.nls(result.3reg, tol = 1e-6)
-result.nls.acorr  <- vstar.nls(result.acorr, tol = 1e-6)
-result.nls.chcoef <- vstar.nls(result.chcoef, tol = 1e-6)
+result.nls.2reg <- vstar.nls(result.2reg, tol = 1e-6, verbose = TRUE)
 ```
 
-And finally, print the summary.
+The summary of the model estimating is as follows.
 
 ```{r}
 summary(result.nls.2reg)
+```
+
+Let's also calculate a matrix of t-statistics for the hypothesis \(\hat{B} = B\).
+
+```{r}
+round((coef(result.nls.2reg)$coef - B_2reg) / result.nls.2reg$sd, 4)
+```
+
+Repeat the steps above for incorrectly estimated `model.3reg`.
+
+```{r, results = FALSE}
+result.3reg <- vstar.grid(dataset = model.3reg,
+                          m = 2,
+                          gamma.limits = c(3, 5),
+                          points = 200,
+                          cores = 10)
+```
+
+```{r}
+result.nls.3reg <- vstar.nls(result.3reg, tol = 1e-6, verbose = TRUE)
+```
+
+```{r}
 summary(result.nls.3reg)
+```
+
+```{r}
+round((coef(result.nls.3reg)$coef - B_2reg) / result.nls.3reg$sd, 4)
+```
+
+Repeat the steps above for `model.acorr` with serial correlation in errors.
+
+```{r, results = FALSE}
+result.acorr <- vstar.grid(dataset = model.acorr,
+                           m = 2,
+                           gamma.limits = c(3, 5),
+                           points = 200,
+                           cores = 10)
+```
+
+```{r}
+result.nls.acorr <- vstar.nls(result.acorr, tol = 1e-6, verbose = TRUE)
+```
+
+```{r}
 summary(result.nls.acorr)
+```
+
+```{r}
+round((coef(result.nls.acorr)$coef - B_2reg) / result.nls.acorr$sd, 4)
+```
+
+Repeat the steps above for `model.chcoef` with changing coefficients.
+
+```{r, results = FALSE}
+result.chcoef <- vstar.grid(dataset = model.chcoef,
+                            m = 2,
+                            gamma.limits = c(3, 5),
+                            points = 200,
+                            cores = 10)
+```
+
+```{r}
+result.nls.chcoef <- vstar.nls(result.chcoef, tol = 1e-6, verbose = TRUE)
+```
+
+```{r}
 summary(result.nls.chcoef)
+```
+
+```{r}
+round((coef(result.nls.chcoef)$coef - B_2reg) / result.nls.chcoef$sd, 4)
 ```
 
 ## Diagnostics {#diagnostics}
