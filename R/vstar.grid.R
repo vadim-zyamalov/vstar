@@ -88,18 +88,6 @@
 #' Department of Economics and Business Economics, Aarhus University,
 #' 2014–08, Mar. 2014.
 #'
-#' @import doSNOW
-#' @import foreach
-#' @import parallel
-#' @importFrom utils txtProgressBar
-#' @importFrom utils setTxtProgressBar
-#' @importFrom arrangements icombinations
-#' @importFrom arrangements ncombinations
-#' @importFrom arrangements ipermutations
-#' @importFrom arrangements npermutations
-#' @importFrom MASS ginv
-#' @importFrom matrixcalc vec
-#'
 #' @export
 vstar.grid <- function(dataset,
                        m = 2,

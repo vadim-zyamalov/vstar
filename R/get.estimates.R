@@ -22,9 +22,6 @@
 #' * An estimate of a covariance matrix.
 #' * The value of `g.function`.
 #'
-#' @importFrom MASS ginv
-#' @importFrom matrixcalc vec
-#'
 #' @keywords internal
 get.estimates <- function(est, dataset, G.func) {
     if (!any(c("vstar", "vstar.data") %in% class(dataset))) {

@@ -10,18 +10,13 @@ Author: Vadim Zyamalov [aut, cre]
 Maintainer: Vadim Zyamalov <zyamalov@ranepa.ru>
 Depends: R (>= 3.5.0)
 Encoding: UTF-8
-Imports:
-    doSNOW,
-    foreach,
-    parallel,
-    matrixcalc,
-    MASS,
-    arrangements,
-    stats,
-    utils
-Description: This package contains functions and procedures needed to test and estimate vector smooth transition autoregressive models (VSTAR).
+Description:
+	This package contains functions and procedures needed to test and estimate vector smooth transition autoregressive models (VSTAR). The codebase is based on two reports by Timo Teräsvirta and Yukai Yang (2014). Although the original papers describe models with different transition functions for every regime and every equation, in the package implemented is the simplest variant with the common transition function for each regime.
 License: MIT + file LICENSE
-URL: https://github.com/vadim-zyamalov/vstar
+URL:
+	https://github.com/vadim-zyamalov/vstar,
+	https://ideas.repec.org/p/aah/create/2014-04.html,
+	https://ideas.repec.org/p/aah/create/2014-08.html
 BugReports: https://github.com/vadim-zyamalov/vstar/issues
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
@@ -29,3 +24,11 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
+Imports: 
+    arrangements,
+    doSNOW,
+    foreach,
+    MASS,
+    matrixcalc,
+    parallel,
+    progress

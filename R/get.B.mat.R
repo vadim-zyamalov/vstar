@@ -37,9 +37,6 @@
 #' Department of Economics and Business Economics, Aarhus University,
 #' 2014–08, Mar. 2014.
 #'
-#' @importFrom MASS ginv
-#' @importFrom matrixcalc vec
-#'
 #' @keywords internal
 get.B.mat <- function(dataset, m, g, thr, g.function = "L") {
     k  <- dataset$dim$k

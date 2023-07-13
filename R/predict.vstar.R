@@ -16,8 +16,6 @@
 #' @return
 #' A matrix of fitted.values.
 #'
-#' @importFrom matrixcalc vec
-#'
 #' @export
 predict.vstar <- function(model,
                           new.data = NULL,

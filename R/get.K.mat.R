@@ -21,8 +21,6 @@
 #' Department of Economics and Business Economics, Aarhus University,
 #' 2014–04, Feb. 2014.
 #'
-#' @importFrom matrixcalc vec
-#'
 #' @keywords internal
 get.K.mat <- function(model, J = 0) {
     if (!"vstar" %in% class(model)) {

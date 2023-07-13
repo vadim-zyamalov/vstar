@@ -32,15 +32,11 @@
 #' Department of Economics and Business Economics, Aarhus University,
 #' 2014–08, Mar. 2014.
 #'
-#' @importFrom stats nls
-#' @importFrom stats nls.control
-#' @importFrom matrixcalc vec
-#' @importFrom optimx optimx
-#'
 #' @export
 vstar.nls <- function(model,
                       tol = 1e-6,
-                      iter = 100) {
+                      iter = 100,
+                      verbose = FALSE) {
     if (!"vstar" %in% class(model)) {
         stop("Wrong `model`: an object with estimated VSTAR model is needed!")
     }

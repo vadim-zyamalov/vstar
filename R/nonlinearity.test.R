@@ -61,10 +61,6 @@
 #' Department of Economics and Business Economics, Aarhus University,
 #' 2014–04, Feb. 2014.
 #'
-#' @importFrom MASS ginv
-#' @importFrom matrixcalc matrix.trace
-#' @importFrom matrixcalc vec
-#'
 #' @export
 nonlinearity.test <- function(model, J = 1, stat.type = "all") {
     if (!"vstar" %in% class(model)) {
