@@ -24,8 +24,12 @@ vstar.prepare(
 
 \item{exog}{a vector of exogenous variables names.}
 
-\item{trans}{a name of transition variable. You may provide a custom one
-as a vector or a column matrix.}
+\item{trans}{a transition variable. It can be either
+\itemize{
+\item a name of transition variable.
+\item a list of 2 values, name of a variable and its lag, respectively.
+\item a custom variable as a vector or a column matrix.
+}}
 
 \item{const}{should an intercept be included.}
 

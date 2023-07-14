@@ -10,8 +10,10 @@
 #'
 #' @param endo a vector of endogenous variables names.
 #' @param exog a vector of exogenous variables names.
-#' @param trans a name of transition variable. You may provide a custom one
-#' as a vector or a column matrix.
+#' @param trans a transition variable. It can be either
+#' * a name of transition variable.
+#' * a list of 2 values, name of a variable and its lag, respectively.
+#' * a custom variable as a vector or a column matrix.
 #' @param const should an intercept be included.
 #' @param trend should a trend be included.
 #' @param season should season dummies be included.
@@ -83,6 +85,12 @@ vstar.prepare <- function(endo,
 
     if (typeof(trans) == "character" && length(trans) == 1) {
         inner.s <- as.matrix(dataset[trans])
+    } else if (typeof(trans) == "list") {
+        if (is.data.frame(dataset)) {
+            inner.s <- lagn(dataset[trans[[1]]], trans[[2]])
+        } else {
+            inner.s <- lagn(dataset[, trans[[1]], drop = FALSE], trans[[2]])
+        }
     } else {
         inner.s <- as.matrix(trans)
     }
@@ -104,7 +112,8 @@ vstar.prepare <- function(endo,
         names.y <- paste("d.", endo, sep = "")
 
         inner.x <- lagn(tmp.y %*% t(coint.beta), 1)
-        names.x <- c(names.x, paste("z", seq_len(nrow(coint.beta)), sep = ""))
+        names.x <- c(names.x,
+                     paste("(z", seq_len(nrow(coint.beta)), ")", sep = ""))
     }
 
     if (inner.p > 0) for (l in 1:inner.p) {
@@ -125,7 +134,7 @@ vstar.prepare <- function(endo,
         tmp.seas <- tmp.seas[seq_len(nrow(inner.x)), -1, drop = FALSE]
 
         inner.x <- cbind(inner.x, tmp.seas)
-        names.x <- c(names.x, paste("s", 2:season, sep = ""))
+        names.x <- c(names.x, paste("(s", 2:season, ")", sep = ""))
     }
 
     if (!is.null(exog)) {
@@ -152,6 +161,8 @@ vstar.prepare <- function(endo,
      colnames(inner.x) <- names.x
      if (is.character(trans)) {
         colnames(inner.s) <- trans
+     } else if (typeof(trans) == "list") {
+         colnames(inner.s) <- trans[[1]]
      }
 
     dimensions <- list(p = p,

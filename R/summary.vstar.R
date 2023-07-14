@@ -29,6 +29,9 @@ summary.vstar <- function(model, ...) {
     }
     if (length(model$params$trans) == 1) {
         cat("Transition variable:   ", model$params$trans, "\n")
+    } else if (typeof(model$params$trans) == "list") {
+        cat("Transition variable:   ",
+            paste("l", model$params$trans[[2]], ".", model$params$trans[[1]], sep = ""), "\n") # nolint
     } else {
         cat("Transition variable:    custom\n")
     }
