@@ -24,10 +24,12 @@ Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
-Imports: 
+Imports:
     arrangements,
+    cowplot,
     doSNOW,
     foreach,
+    ggplot2,
     MASS,
     matrixcalc,
     parallel,
