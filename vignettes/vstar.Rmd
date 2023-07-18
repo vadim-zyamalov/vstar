@@ -717,6 +717,38 @@ round(stability.test(result.nls.acorr), 4)
 round(stability.test(result.nls.chcoef), 4)
 ```
 
+## Impulse responces
+
+Let's build and plot Generalized IRF using the approach by [@koop1996impulse].
+
+```{r}
+irf.nls.2reg.1 <- vstar.girf(result.nls.2reg, shock = 1, cores = 10)
+irf.nls.2reg.2 <- vstar.girf(result.nls.2reg, shock = 2, cores = 10)
+plot(irf.nls.2reg.1)
+plot(irf.nls.2reg.2)
+```
+
+```{r}
+irf.nls.3reg.1 <- vstar.girf(result.nls.3reg, shock = 1, cores = 10)
+irf.nls.3reg.2 <- vstar.girf(result.nls.3reg, shock = 2, cores = 10)
+plot(irf.nls.3reg.1)
+plot(irf.nls.3reg.2)
+```
+
+```{r}
+irf.nls.acorr.1 <- vstar.girf(result.nls.acorr, shock = 1, cores = 10)
+irf.nls.acorr.2 <- vstar.girf(result.nls.acorr, shock = 2, cores = 10)
+plot(irf.nls.acorr.1)
+plot(irf.nls.acorr.2)
+```
+
+```{r}
+irf.nls.chcoef.1 <- vstar.girf(result.nls.chcoef, shock = 1, cores = 10)
+irf.nls.chcoef.2 <- vstar.girf(result.nls.chcoef, shock = 2, cores = 10)
+plot(irf.nls.chcoef.1)
+plot(irf.nls.chcoef.2)
+```
+
 # References {-}
 
 <div id="refs"></div>

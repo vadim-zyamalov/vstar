@@ -101,8 +101,7 @@ for (k in 1:N) {
     y.lag <- y.acorr[k, , drop = FALSE]
     e[k + 1, ] <- e[k + 1, ] + .8 * e[k, ]
     PSI <- t(t(c(1, G.mat_2reg[k, ]))) %x% diag(2)
-    y.acorr[k + 1, ] <- t(t(PSI) %*% t(B_2reg) %*% t(y.lag) +
-                              t(e[k + 1, , drop = FALSE]))
+    y.acorr[k + 1, ] <- t(t(PSI) %*% t(B_2reg) %*% t(y.lag) + e[k + 1, ])
 }
 y.acorr <- y.acorr[52:(N + 1), 1:2, drop = FALSE]
 colnames(y.acorr) <- c("y1", "y2")
@@ -191,10 +190,11 @@ result.chcoef <- vstar.grid(dataset = model.chcoef,
                             cores = 10)
 
 ## -----------------------------------------------------------------------------
-result.nls.2reg   <- vstar.nls(result.2reg, tol = 1e-6, verbose = TRUE)
-result.nls.3reg   <- vstar.nls(result.3reg, tol = 1e-6, verbose = TRUE)
-result.nls.acorr  <- vstar.nls(result.acorr, tol = 1e-6, verbose = TRUE)
-result.nls.chcoef <- vstar.nls(result.chcoef, tol = 1e-6, verbose = TRUE)
+result.nls.2reg    <- vstar.nls(result.2reg, tol = 1e-6, verbose = TRUE)
+result.nls.3reg    <- vstar.nls(result.3reg, tol = 1e-6, verbose = TRUE)
+result.nls.3reg.ok <- vstar.nls(result.3reg.ok, tol = 1e-6, verbose = TRUE)
+result.nls.acorr   <- vstar.nls(result.acorr, tol = 1e-6, verbose = TRUE)
+result.nls.chcoef  <- vstar.nls(result.chcoef, tol = 1e-6, verbose = TRUE)
 
 ## -----------------------------------------------------------------------------
 summary(result.nls.2reg)
