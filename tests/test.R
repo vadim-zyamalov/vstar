@@ -219,3 +219,9 @@ round(stability.test(result.nls.2reg), 4)
 round(stability.test(result.nls.3reg), 4)
 round(stability.test(result.nls.acorr), 4)
 round(stability.test(result.nls.chcoef), 4)
+
+## -----------------------------------------------------------------------------
+irf.nls.2reg.1 <- vstar.girf(result.nls.2reg, shock = 1, cores = 10)
+irf.nls.2reg.2 <- vstar.girf(result.nls.2reg, shock = 2, cores = 10)
+plot(irf.nls.2reg.1)
+plot(irf.nls.2reg.2)
