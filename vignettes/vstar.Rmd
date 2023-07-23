@@ -303,7 +303,7 @@ The matrix \(M\) is defined as follows
     1 & g_1(s_1) & \dots & g_{m-1}(s_1) \\
     \vdots & \vdots & & \vdots \\
     1 & g_1(s_T) & \dots & g_{m-1}(s_T) \end{array}\right) \otimes I_k \otimes e_{kp+q}' \right] \times \left[e_{km}' \otimes X \otimes e_k\right] \]
-where \(g_k(s) = g(s \mid \gamma_k, c_k\), \(e_N = (\underbrace{1, \dots, 1}_N)'\).
+where \(g_k(s) = g(s \mid \gamma_k, c_k)\), \(e_N = (\underbrace{1, \dots, 1}_N)'\).
 \(\times\) denotes element-wise product.
 
 ## The analysis of \@ref(eq:nls-3)
