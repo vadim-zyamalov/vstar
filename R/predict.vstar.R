@@ -21,36 +21,40 @@ predict.vstar <- function(model,
                           new.data = NULL,
                           new.trans = NULL,
                           na.action = na.omit, ...) {
-    if (!"vstar" %in% class(model)) {
-        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
-    }
+  if (!"vstar" %in% class(model)) {
+    stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+  }
 
-    if (is.null(new.data)) {
-        return(model$fitted.values)
-    }
+  if (is.null(new.data)) {
+    return(model$fitted.values)
+  }
 
-    if (!"vstar.data" %in% class(new.data)) {
-        new.data <- vstar.prepare(endo = model$params$endo,
-                                  exog = model$params$exog,
-                                  trans = new.trans,
-                                  const = model$params$const,
-                                  trend = model$params$trend,
-                                  season = model$params$season,
-                                  p = model$dim$p,
-                                  coint.beta = model$params$coint.beta,
-                                  coint.const = model$params$coint.const,
-                                  coint.trend = model$params$coint.trend,
-                                  na.action = na.action,
-                                  dataset = new.data)
-    }
+  if (!"vstar.data" %in% class(new.data)) {
+    new.data <- vstar.prepare(
+      endo = model$params$endo,
+      exog = model$params$exog,
+      trans = new.trans,
+      const = model$params$const,
+      trend = model$params$trend,
+      season = model$params$season,
+      p = model$dim$p,
+      coint.beta = model$params$coint.beta,
+      coint.const = model$params$coint.const,
+      coint.trend = model$params$coint.trend,
+      na.action = na.action,
+      dataset = new.data
+    )
+  }
 
-    BM.mat <- get.B.mat(new.data,
-                        model$dim$m,
-                        model$g,
-                        model$c,
-                        model$g.function)
+  BM.mat <- get.B.mat(
+    new.data,
+    model$dim$m,
+    model$g,
+    model$c,
+    model$g.function
+  )
 
-    result <- t(matrix(BM.mat$M %*% vec(model$coef), ncol = new.data$dim$N))
+  result <- t(matrix(BM.mat$M %*% vec(model$coef), ncol = new.data$dim$N))
 
-    return(result)
+  return(result)
 }

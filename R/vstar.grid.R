@@ -105,113 +105,126 @@ vstar.grid <- function(dataset,
                        trim = .15,
                        gap = .1,
                        cores = 1) {
+  p <- dataset$dim$p
+  p.fixed <- dataset$dim$p.fixed
+  k <- dataset$dim$k
+  N <- dataset$dim$N
 
-    p <- dataset$dim$p
-    p.fixed <- dataset$dim$p.fixed
-    k <- dataset$dim$k
-    N <- dataset$dim$N
+  if (!"vstar.data" %in% class(dataset)) {
+    stop("Wrong `dataset`: an object with prepared data is needed!")
+  }
+  if (m < 2) {
+    stop("`m` too low: at least 2 regimes is needed!")
+  }
 
-    if (!"vstar.data" %in% class(dataset)) {
-        stop("Wrong `dataset`: an object with prepared data is needed!")
+  G.func <- get.G.function(g.function)
+
+  if (trim < 1) {
+    min.c.ind <- trunc(N * trim)
+  } else {
+    min.c.ind <- trim
+  }
+  max.c.ind <- N - min.c.ind
+
+  min.c <- dataset$data$S[order(dataset$data$S)][min.c.ind]
+  max.c <- dataset$data$S[order(dataset$data$S)][max.c.ind]
+
+  if (gap < 1) {
+    gap <- trunc(N * gap)
+  }
+
+  grid.data <- get.grid(
+    gamma.limits,
+    c(min.c, max.c),
+    points
+  )
+
+  iterations <- ncombinations(n = points, k = m - 1) *
+    npermutations(n = points, k = m - 1)
+
+  pb <- progress_bar$new(
+    format = ":percent [:bar] :elapsed | ETA: :eta",
+    total = iterations,
+    width = 60
+  )
+  progress <- function(n) pb$tick()
+
+  combine <- function(A, B) if (A$SSR < B$SSR) A else B # nolint
+
+  cluster <- makeCluster(min(cores, detectCores() - 1), type = "SOCK")
+  registerDoSNOW(cluster)
+
+  c.iter <- icombinations(n = points, k = m - 1)
+  g.iter <- ipermutations(n = points, k = m - 1)
+
+  grid.result <- foreach(
+    cc = c.iter,
+    .combine = "combine",
+    .packages = c("vstar"),
+    .options.snow = list(progress = progress)
+  ) %:%
+    foreach(
+      gg = g.iter,
+      .combine = "combine"
+    ) %dopar% {
+      cc <- drop(cc)
+      gg <- drop(gg)
+
+      if (length(cc) > 1 && !all(diff(cc) > gap)) {
+        list(SSR = Inf)
+      }
+
+      c.vals <- grid.data$c[cc]
+      g.vals <- grid.data$g[gg]
+
+      BM <- get.B.mat(dataset, m, g.vals, c.vals, G.func)
+
+      vec.E <- vec(t(dataset$data$Y)) - BM$M %*% BM$vec.B
+
+      SSR <- drop(t(vec.E) %*% vec.E)
+
+      list(
+        vec.B = BM$vec.B,
+        vec.E = vec.E,
+        M = BM$M,
+        SSR = SSR,
+        m = m,
+        g = g.vals,
+        c = c.vals
+      )
     }
-    if (m < 2) {
-        stop("`m` too low: at least 2 regimes is needed!")
-    }
 
-    G.func <- get.G.function(g.function)
+  stopCluster(cluster)
 
-    if (trim < 1) {
-        min.c.ind <- trunc(N * trim)
-    } else {
-        min.c.ind <- trim
-    }
-    max.c.ind <- N - min.c.ind
+  final.est <- get.estimates(grid.result, dataset, G.func)
 
-    min.c <- dataset$data$S[order(dataset$data$S)][min.c.ind]
-    max.c <- dataset$data$S[order(dataset$data$S)][max.c.ind]
+  result <- list(
+    coef = final.est$coef,
+    sd = final.est$sd,
+    t.stat = final.est$t.stat,
+    g = grid.result$g,
+    c = grid.result$c,
+    fitted.values = final.est$fitted.values,
+    residuals = final.est$residuals,
+    cov = final.est$cov,
+    g.function = g.function,
+    func = list(
+      g.function = G.func,
+      g.derivative = g.derivative
+    ),
+    estimates = grid.result,
+    params = dataset$params,
+    dim = list(
+      p = p,
+      p.fixed = p.fixed,
+      m = m,
+      k = k,
+      N = N
+    ),
+    data = dataset$data
+  )
 
-    if (gap < 1) {
-        gap <- trunc(N * gap)
-    }
+  class(result) <- "vstar"
 
-    grid.data <- get.grid(gamma.limits,
-                          c(min.c, max.c),
-                          points)
-
-    iterations <- ncombinations(n = points, k = m - 1) *
-        npermutations(n = points, k = m - 1)
-
-    pb <- progress_bar$new(
-        format = ":percent [:bar] :elapsed | ETA: :eta",
-        total = iterations,
-        width = 60
-    )
-    progress <- function(n) pb$tick()
-
-    combine <- function(A, B) if (A$SSR < B$SSR) A else B # nolint
-
-    cluster <- makeCluster(min(cores, detectCores() - 1), type = "SOCK")
-    registerDoSNOW(cluster)
-
-    c.iter <- icombinations(n = points, k = m - 1)
-    g.iter <- ipermutations(n = points, k = m - 1)
-
-    grid.result <- foreach(cc = c.iter,
-                           .combine = "combine",
-                           .packages = c("vstar"),
-                           .options.snow = list(progress = progress)) %:%
-                   foreach(gg = g.iter,
-                           .combine = "combine") %dopar% {
-        cc <- drop(cc)
-        gg <- drop(gg)
-
-        if (length(cc) > 1 && !all(diff(cc) > gap)) {
-            list(SSR = Inf)
-        }
-
-        c.vals <- grid.data$c[cc]
-        g.vals <- grid.data$g[gg]
-
-        BM <- get.B.mat(dataset, m, g.vals, c.vals, G.func)
-
-        vec.E  <- vec(t(dataset$data$Y)) - BM$M %*% BM$vec.B
-
-        SSR <- drop(t(vec.E) %*% vec.E)
-
-        list(vec.B = BM$vec.B,
-             vec.E = vec.E,
-             M = BM$M,
-             SSR = SSR,
-             m = m,
-             g = g.vals,
-             c = c.vals)
-    }
-
-    stopCluster(cluster)
-
-    final.est <- get.estimates(grid.result, dataset, G.func)
-
-    result <- list(coef = final.est$coef,
-                   sd = final.est$sd,
-                   t.stat = final.est$t.stat,
-                   g = grid.result$g,
-                   c = grid.result$c,
-                   fitted.values = final.est$fitted.values,
-                   residuals = final.est$residuals,
-                   cov = final.est$cov,
-                   g.function = g.function,
-                   func = list(g.function = G.func,
-                               g.derivative = g.derivative),
-                   estimates = grid.result,
-                   params = dataset$params,
-                   dim = list(p = p,
-                              p.fixed = p.fixed,
-                              m = m,
-                              k = k,
-                              N = N),
-                   data = dataset$data)
-
-    class(result) <- "vstar"
-
-    return(result)
+  return(result)
 }

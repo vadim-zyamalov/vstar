@@ -9,7 +9,7 @@
 #'
 #' @keywords internal
 get.bootstrap <- function(x, n) {
-    N <- length(x)
-    idx <- sample(1:N, n, replace = TRUE)
-    return(x[idx])
+  N <- length(x)
+  idx <- sample(1:N, n, replace = TRUE)
+  return(x[idx])
 }

@@ -38,94 +38,98 @@ vstar.nls <- function(model,
                       tol = 1e-6,
                       iter = 100,
                       verbose = FALSE) {
-    if (!"vstar" %in% class(model)) {
-        stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+  if (!"vstar" %in% class(model)) {
+    stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+  }
+
+  m <- model$dim$m
+
+  vec.y <- vec(t(model$data$Y))
+  G.func <- model$func$g.function
+
+  yf <- function(g, thr) { # nolint
+    BM <- get.B.mat(model, g, thr, G.func)
+    BM$M %*% BM$vec.B
+  }
+
+  Q <- function(gc) {
+    g <- gc[1:(m - 1)]
+    thr <- gc[m:length(gc)]
+    BM <- get.B.mat(model, m, g, thr, G.func)
+    vec.E <- vec(t(model$data$Y)) - BM$M %*% BM$vec.B
+    drop(t(vec.E) %*% vec.E)
+  }
+
+  iter.g <- model$estimates$g
+  iter.c <- model$estimates$c
+  iter.B <- model$estimates$vec.B # nolint
+
+  converged <- FALSE
+
+  for (step in 1:iter) {
+    if (verbose) {
+      cat("Step ", step, ": ", sep = "")
     }
 
-    m <- model$dim$m
+    iter.nls <- optim(c(iter.g, iter.c), Q)
+    result <- iter.nls$par
 
-    vec.y <- vec(t(model$data$Y))
-    G.func <- model$func$g.function
+    dd <- result - c(iter.g, iter.c)
+    delta <- sqrt(dd %*% dd)
 
-    yf <- function(g, thr) { # nolint
-        BM <- get.B.mat(model, g, thr, G.func)
-        BM$M %*% BM$vec.B
+    if (verbose) {
+      cat("delta = ", delta, "\n", sep = "")
     }
 
-    Q <- function(gc) {
-        g <- gc[1:(m - 1)]
-        thr <- gc[m:length(gc)]
-        BM <- get.B.mat(model, m, g, thr, G.func)
-        vec.E <- vec(t(model$data$Y)) - BM$M %*% BM$vec.B
-        drop(t(vec.E) %*% vec.E)
+    iter.g <- result[1:(m - 1)]
+    iter.c <- result[m:length(result)]
+
+    iter.BM <- get.B.mat(model, m, iter.g, iter.c, G.func)
+    iter.B <- iter.BM$vec.B
+
+    if (sqrt(dd %*% dd) < tol) {
+      converged <- TRUE
+      cat("Tolerance level", tol, "achieved in", step, "steps.\n")
+      break
     }
+  }
 
-    iter.g <- model$estimates$g
-    iter.c <- model$estimates$c
-    iter.B <- model$estimates$vec.B # nolint
+  if (!converged) {
+    cat("Reached limit of", iter, "steps.\n")
+    cat("Possible absence of convergence!\n")
+  }
 
-    converged <- FALSE
+  nls.result <- list(
+    vec.B = iter.BM$vec.B,
+    vec.E = vec.y - iter.BM$M %*% iter.BM$vec.B,
+    M = iter.BM$M,
+    SSR = drop(t(model$estimates$vec.E) %*%
+      model$estimates$vec.E),
+    m = m,
+    g = iter.g,
+    c = iter.c
+  )
 
-    for (step in 1:iter) {
-        if (verbose) {
-            cat("Step ", step, ": ", sep = "")
-        }
+  final.est <- get.estimates(nls.result, model, model$g.function)
 
-        iter.nls <- optim(c(iter.g, iter.c), Q)
-        result <- iter.nls$par
+  result <- list(
+    coef = final.est$coef,
+    sd = final.est$sd,
+    t.stat = final.est$t.stat,
+    g = iter.g,
+    c = iter.c,
+    fitted.values = final.est$fitted.values,
+    residuals = final.est$residuals,
+    cov = final.est$cov,
+    g.function = model$g.function,
+    func = model$func,
+    estimates = nls.result,
+    params = model$params,
+    dim = model$dim,
+    data = model$data
+  )
 
-        dd <- result - c(iter.g, iter.c)
-        delta <- sqrt(dd %*% dd)
+  class(result) <- "vstar"
 
-        if (verbose) {
-            cat("delta = ", delta, "\n", sep = "")
-        }
-
-        iter.g <- result[1:(m - 1)]
-        iter.c <- result[m:length(result)]
-
-        iter.BM <- get.B.mat(model, m, iter.g, iter.c, G.func)
-        iter.B <- iter.BM$vec.B
-
-        if (sqrt(dd %*% dd) < tol) {
-            converged <- TRUE
-            cat("Tolerance level", tol, "achieved in", step, "steps.\n")
-            break
-        }
-    }
-
-    if (!converged) {
-        cat("Reached limit of", iter, "steps.\n")
-        cat("Possible absence of convergence!\n")
-    }
-
-    nls.result <- list(vec.B = iter.BM$vec.B,
-                       vec.E = vec.y - iter.BM$M %*% iter.BM$vec.B,
-                       M = iter.BM$M,
-                       SSR = drop(t(model$estimates$vec.E) %*%
-                                model$estimates$vec.E),
-                       m = m,
-                       g = iter.g,
-                       c = iter.c)
-
-    final.est <- get.estimates(nls.result, model, model$g.function)
-
-    result <- list(coef = final.est$coef,
-                   sd = final.est$sd,
-                   t.stat = final.est$t.stat,
-                   g = iter.g,
-                   c = iter.c,
-                   fitted.values = final.est$fitted.values,
-                   residuals = final.est$residuals,
-                   cov = final.est$cov,
-                   g.function = model$g.function,
-                   func = model$func,
-                   estimates = nls.result,
-                   params = model$params,
-                   dim = model$dim,
-                   data = model$data)
-
-    class(result) <- "vstar"
-
-    return(result)
+  return(result)
 }

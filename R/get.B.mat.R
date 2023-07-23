@@ -39,23 +39,25 @@
 #'
 #' @keywords internal
 get.B.mat <- function(dataset, m, g, thr, g.function = "L") {
-    k  <- dataset$dim$k
-    N  <- dataset$dim$N
-    Nx <- ncol(dataset$data$X)
+  k <- dataset$dim$k
+  N <- dataset$dim$N
+  Nx <- ncol(dataset$data$X)
 
-    G.func <- get.G.function(g.function)
+  G.func <- get.G.function(g.function)
 
-    sm <- dataset$data$S %x% t(unity(m - 1))
-    gm <- unity(N) %x% t(g)
-    cm <- unity(N) %x% t(thr)
+  sm <- dataset$data$S %x% t(unity(m - 1))
+  gm <- unity(N) %x% t(g)
+  cm <- unity(N) %x% t(thr)
 
-    G.mat <- G.func(sm, gm, cm)
+  G.mat <- G.func(sm, gm, cm)
 
-    M <- (cbind(unity(N), G.mat) %x% diag(k) %x% t(unity(Nx))) *
-            (t(unity(k * m)) %x% dataset$data$X %x% unity(k))
+  M <- (cbind(unity(N), G.mat) %x% diag(k) %x% t(unity(Nx))) *
+    (t(unity(k * m)) %x% dataset$data$X %x% unity(k))
 
-    vec.B <- ginv(t(M) %*% M) %*% t(M) %*% vec(t(dataset$data$Y))
+  vec.B <- ginv(t(M) %*% M) %*% t(M) %*% vec(t(dataset$data$Y))
 
-    return(list(vec.B = vec.B,
-                M = M))
+  return(list(
+    vec.B = vec.B,
+    M = M
+  ))
 }
