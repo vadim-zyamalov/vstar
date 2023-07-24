@@ -20,7 +20,6 @@
 #' * A matrix of fitted values.
 #' * A matrix of residuals.
 #' * An estimate of a covariance matrix.
-#' * The value of `g.function`.
 #'
 #' @keywords internal
 get.estimates <- function(est, dataset, G.func) {

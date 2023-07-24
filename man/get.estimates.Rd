@@ -25,7 +25,6 @@ A list containing
 \item A matrix of fitted values.
 \item A matrix of residuals.
 \item An estimate of a covariance matrix.
-\item The value of \code{g.function}.
 }
 }
 \description{

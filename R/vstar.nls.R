@@ -47,11 +47,6 @@ vstar.nls <- function(model,
   vec.y <- vec(t(model$data$Y))
   G.func <- model$func$g.function
 
-  yf <- function(g, thr) { # nolint
-    BM <- get.B.mat(model, g, thr, G.func)
-    BM$M %*% BM$vec.B
-  }
-
   Q <- function(gc) {
     g <- gc[1:(m - 1)]
     thr <- gc[m:length(gc)]
@@ -110,7 +105,7 @@ vstar.nls <- function(model,
     c = iter.c
   )
 
-  final.est <- get.estimates(nls.result, model, model$g.function)
+  final.est <- get.estimates(nls.result, model, G.func)
 
   result <- list(
     coef = final.est$coef,
