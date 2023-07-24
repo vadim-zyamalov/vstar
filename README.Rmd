@@ -1,0 +1,130 @@
+---
+output: github_document
+bibliography: '`r system.file("references.bib", package="vstar")`'
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# vstar
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of vstar is to test and estimate Vector Smooth Transition
+Autoregression models (VSTAR).
+The code is based on the specification from [@terasvirta1994specification].
+
+[@terasvirta1994specification] describes the most general model, allowing for
+different transition variables and threshold values for every equation of the
+system and every regime.
+However, in the package implemented is much simpler, yet suitable specification,
+which uses a common transition variable for all regimes and a common
+threshold value in each regime.
+
+## Installation
+
+You can install the development version of vstar from
+[GitHub](https://github.com/) with:
+
+``` r
+# install.packages("devtools")
+devtools::install_github("vadim-zyamalov/vstar")
+```
+
+## Example
+
+This is a basic example which shows you how to solve a common problem:
+
+```{r example}
+library(vstar)
+```
+
+Let's generate an artifical data with two regimes using the following matrices:
+\begin{gather*}
+A_1' = \left(\matrix{.5 & 0 \\ 0 & .5}\right) \\
+A_2' = \left(\matrix{.8 & .1 \\ .1 & .8}\right)
+\end{gather*}
+The transition variable is a normal random variable with zero mean and unit
+variance.
+The threshold value is a median value of the transition variable.
+The smoothness parameter \(\gamma\) equals 4.
+We'll use a logistic transition function.
+
+```{r data-generation, echo = FALSE}
+N <- 1000
+s <- rnorm(N)
+thr_2reg <- median(s)
+G.func <- vstar:::get.G.function("L")
+sm <- s %x% t(vstar:::unity(1))
+gm <- vstar:::unity(N) %x% t(4)
+cm <- vstar:::unity(N) %x% t(thr_2reg)
+G.mat_2reg <- G.func(sm, gm, cm)
+A1 <- .5 * diag(2)
+A2 <- matrix(c(.8, .1, .1, .8), ncol = 2)
+B_2reg <- cbind(t(A1), t(A2))
+
+y.2reg <- matrix(0, ncol = 2, nrow = 1001)
+y.2reg[1, ] <- rnorm(2)
+for (k in 1:N) {
+    y.lag <- y.2reg[k, , drop = FALSE]
+    PSI <- t(t(c(1, G.mat_2reg[k, ]))) %x% diag(2)
+    y.2reg[k + 1, ] <- t(t(PSI) %*% t(B_2reg) %*% t(y.lag) + rnorm(2))
+}
+y.2reg <- y.2reg[52:(N + 1), 1:2, drop = FALSE]
+colnames(y.2reg) <- c("y1", "y2")
+
+s <- s[51:N]
+
+plot.ts(y.2reg)
+```
+
+First, we prepare data for the LSTAR-model estimation:
+
+```{r model-preparation}
+model.2reg <- vstar.prepare(endo = c("y1", "y2"),
+                            p = 1,
+                            trans = s,
+                            dataset = y.2reg)
+```
+
+The linearity test statistics reject the null of linearity:
+
+```{r linearity-test}
+round(linearity.test(model.2reg, J = 1), 4)
+```
+
+Next, we obtain the starting values for Nonlinear Least Squares by the grid
+search.
+
+```{r model-grid, results = FALSE}
+result.2reg <- vstar.grid(dataset = model.2reg,
+                          m = 2,
+                          gamma.limits = c(3, 5),
+                          points = 200,
+                          cores = 10)
+```
+
+The we estimate the model with NLS.
+
+```{r model-nls}
+result.nls.2reg <- vstar.nls(result.2reg, tol = 1e-6, verbose = TRUE)
+```
+
+Then we print out the summary of the estimated model.
+
+```{r model-summary}
+summary(result.nls.2reg)
+```
+
+# References
+
+<div id="refs"></div>
