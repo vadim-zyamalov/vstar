@@ -11,6 +11,7 @@ vstar.girf(
   history = 1:model$dim$N,
   iter = 1000,
   R = 100,
+  p.levels = c(0.1, 0.25, 0.5, 0.75, 0.9),
   cores = 1
 )
 }
@@ -25,6 +26,9 @@ impulse range.}
 \item{iter}{a number of steps to get the distribution of GIRF.}
 
 \item{R}{a number of repetitions in each step.}
+
+\item{p.levels}{a vector of needed percentiles in ascending order.
+Five values should be provided.}
 
 \item{cores}{a number of cores to be used.
 If greater than 1 then a grid search will be done in parallel.

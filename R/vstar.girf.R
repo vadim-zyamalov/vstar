@@ -28,6 +28,8 @@
 #' impulse range.
 #' @param iter a number of steps to get the distribution of GIRF.
 #' @param R a number of repetitions in each step.
+#' @param p.levels a vector of needed percentiles in ascending order.
+#' Five values should be provided.
 #' @param cores a number of cores to be used.
 #' If greater than 1 then a grid search will be done in parallel.
 #' The number of cores has the upper bound of processor cores number minus 1.
@@ -51,8 +53,15 @@ vstar.girf <- function(model,
                        history = 1:model$dim$N,
                        iter = 1000,
                        R = 100,
-                       q.levels = c(.1, .25, .5, .75, .9),
+                       p.levels = c(.1, .25, .5, .75, .9),
                        cores = 1) {
+  if (!"vstar" %in% class(model)) {
+    stop("Wrong `model`: an object with estimated VSTAR model is needed!")
+  }
+  if (length(p.levels) != 5) {
+    stop("Wrong `p.levels`: a vector of 5 values should be provided!")
+  }
+
   k <- model$dim$k
   p <- model$dim$p.fixed
   m <- model$dim$m
@@ -360,15 +369,15 @@ vstar.girf <- function(model,
     irf.p <- cbind(irf.p, results[[ii]]$p)
     irf.m <- cbind(irf.m, results[[ii]]$m)
   }
-  
-  q.levels <- q.levels[order(q.levels)]
+
+  p.levels <- p.levels[order(p.levels)]
   qirf.p <- t(
-    apply(irf.p, 1, function(r) quantile(r, q.levels))
+    apply(irf.p, 1, function(r) quantile(r, p.levels))
   )
   qirf.m <- t(
-    apply(irf.m, 1, function(r) quantile(r, q.levels))
+    apply(irf.m, 1, function(r) quantile(r, p.levels))
   )
-  
+
   names.y <- colnames(model$data$Y)
   pos <- list()
   neg <- list()
@@ -383,7 +392,7 @@ vstar.girf <- function(model,
   result <- list(
     pos = pos,
     neg = neg,
-    quant = q.levels,
+    quant = p.levels,
     shock = colnames(model$data$Y)[shock],
     n = n
   )
