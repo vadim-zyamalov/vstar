@@ -8,13 +8,14 @@
 
 The goal of vstar is to test and estimate Vector Smooth Transition
 Autoregression models (VSTAR). The code is based on the specification
-from (Teräsvirta 1994).
+from (Teräsvirta and Yang 2014b, 2014a).
 
-(Teräsvirta 1994) describes the most general model, allowing for
-different transition variables and threshold values for every equation
-of the system and every regime. However, in the package implemented is
-much simpler, yet suitable specification, which uses a common transition
-variable for all regimes and a common threshold value in each regime.
+(Teräsvirta and Yang 2014b) describes the most general model, allowing
+for different transition variables and threshold values for every
+equation of the system and every regime. However, in the package
+implemented is much simpler, yet suitable specification, which uses a
+common transition variable for all regimes and a common threshold value
+in each regime.
 
 ## Installation
 
@@ -35,10 +36,12 @@ library(vstar)
 ```
 
 Let’s generate an artifical data with two regimes using the following
-matrices: The transition variable is a normal random variable with zero
-mean and unit variance. The threshold value is a median value of the
-transition variable. The smoothness parameter $\gamma$ equals 4. We’ll
-use a logistic transition function.
+matrices: $$A_1' = \left(\matrix{.5 & 0 \cr 0 & .5}\right)$$
+$$A_2' = \left(\matrix{.8 & .1 \cr .1 & .8}\right)$$ The transition
+variable is a normal random variable with zero mean and unit variance.
+The threshold value is a median value of the transition variable. The
+smoothness parameter $\gamma$ equals 4. We’ll use a logistic transition
+function.
 
 <img src="man/figures/README-data-generation-1.png" width="100%" />
 
@@ -56,10 +59,10 @@ The linearity test statistics reject the null of linearity:
 ``` r
 round(linearity.test(model.2reg, J = 1), 4)
 #>                     stat crit.10 crit.5  crit.1 p.value
-#> LM              861.1741  7.7794 9.4877 13.2767       0
-#> r-LM            214.3861  1.9478 2.3766  3.3291       0
-#> Rao             463.2582  1.9478 2.3766  3.3291       0
-#> Bartlett-Wilks 1291.7807  7.7794 9.4877 13.2767       0
+#> LM              764.1390  7.7794 9.4877 13.2767       0
+#> r-LM            190.2295  1.9478 2.3766  3.3291       0
+#> Rao             366.1712  1.9478 2.3766  3.3291       0
+#> Bartlett-Wilks 1084.7458  7.7794 9.4877 13.2767       0
 ```
 
 Next, we obtain the starting values for Nonlinear Least Squares by the
@@ -73,13 +76,14 @@ result.2reg <- vstar.grid(dataset = model.2reg,
                           cores = 10)
 ```
 
-The we estimate the model with NLS.
+Then we estimate the model with NLS.
 
 ``` r
 result.nls.2reg <- vstar.nls(result.2reg, tol = 1e-6, verbose = TRUE)
-#> Step 1: delta = 0.00174813
-#> Step 2: delta = 0
-#> Tolerance level 1e-06 achieved in 2 steps.
+#> Step 1: delta = 0.002780002
+#> Step 2: delta = 0.0001072831
+#> Step 3: delta = 0
+#> Tolerance level 1e-06 achieved in 3 steps.
 ```
 
 Then we print out the summary of the estimated model.
@@ -101,36 +105,45 @@ summary(result.nls.2reg)
 #>
 #> Transition function: logistic
 #> gamma values:
-#> [1] 4.134393
+#> [1] 3.341556
 #> threshold values:
-#> [1] 0.04981291
+#> [1] -0.07474272
 #>
 #> Matrix of coefficients:
-#>              R1.y1        R1.y2     R2.y1     R2.y2
-#> l1.y1  0.496116782 -0.006628721 0.7837311 0.1105947
-#> l1.y2 -0.006861645  0.509762292 0.1290430 0.7811628
+#>            R1.y1      R1.y2      R2.y1     R2.y2
+#> l1.y1 0.43108671 -0.0373987 0.84092522 0.1328473
+#> l1.y2 0.03924485  0.4748471 0.05479257 0.8376930
 #>
 #> Matrix of coefficients SD:
-#>            R1.y1      R1.y2      R2.y1      R2.y2
-#> l1.y1 0.01727355 0.01721476 0.02607322 0.02598448
-#> l1.y2 0.01526715 0.01521518 0.02235490 0.02227881
+#>            R1.y1      R1.y2      R2.y1     R2.y2
+#> l1.y1 0.02323907 0.02323704 0.03767280 0.0376695
+#> l1.y2 0.01924053 0.01923884 0.03049446 0.0304918
 #>
 #> Residuals covariance matrix:
 #>             resid.y1    resid.y2
-#> resid.y1  1.00476572 -0.06233943
-#> resid.y2 -0.06233943  0.99793755
+#> resid.y1 1.041408739 0.006190959
+#> resid.y2 0.006190959 1.041226692
 ```
 
 # References
 
 <div id="refs" class="references csl-bib-body hanging-indent">
 
-<div id="ref-terasvirta1994specification" class="csl-entry">
+<div id="ref-terasvirta2014linearity" class="csl-entry">
 
-Teräsvirta, Timo. 1994. “Specification, Estimation, and Evaluation of
-Smooth Transition Autoregressive Models.” *Journal of the American
-Statistical Association* 89 (425): 208–18.
-<https://doi.org/10.2307/2291217>.
+Teräsvirta, Timo, and Yukai Yang. 2014a. “Linearity and Misspecification
+Tests for Vector Smooth Transition Regression Models.” 2014-04.
+Department of Economics and Business Economics, Aarhus University.
+<https://ideas.repec.org/p/aah/create/2014-04.html>.
+
+</div>
+
+<div id="ref-terasvirta2014specification" class="csl-entry">
+
+———. 2014b. “Specification, Estimation and Evaluation of Vector Smooth
+Transition Autoregressive Models with Applications.” 2014-08. Department
+of Economics and Business Economics, Aarhus University.
+<https://ideas.repec.org/p/aah/create/2014-08.html>.
 
 </div>
 

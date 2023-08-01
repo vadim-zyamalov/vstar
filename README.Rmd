@@ -21,9 +21,10 @@ knitr::opts_chunk$set(
 
 The goal of vstar is to test and estimate Vector Smooth Transition
 Autoregression models (VSTAR).
-The code is based on the specification from [@terasvirta1994specification].
+The code is based on the specification from
+[@terasvirta2014specification;@terasvirta2014linearity].
 
-[@terasvirta1994specification] describes the most general model, allowing for
+[@terasvirta2014specification] describes the most general model, allowing for
 different transition variables and threshold values for every equation of the
 system and every regime.
 However, in the package implemented is much simpler, yet suitable specification,
@@ -49,10 +50,8 @@ library(vstar)
 ```
 
 Let's generate an artifical data with two regimes using the following matrices:
-\begin{gather*}
-A_1' = \left(\matrix{.5 & 0 \\ 0 & .5}\right) \\
-A_2' = \left(\matrix{.8 & .1 \\ .1 & .8}\right)
-\end{gather*}
+\[A_1' = \left(\matrix{.5 & 0 \cr 0 & .5}\right)\]
+\[A_2' = \left(\matrix{.8 & .1 \cr .1 & .8}\right)\]
 The transition variable is a normal random variable with zero mean and unit
 variance.
 The threshold value is a median value of the transition variable.
@@ -105,7 +104,7 @@ round(linearity.test(model.2reg, J = 1), 4)
 Next, we obtain the starting values for Nonlinear Least Squares by the grid
 search.
 
-```{r model-grid, results = FALSE}
+```{r model-grid}
 result.2reg <- vstar.grid(dataset = model.2reg,
                           m = 2,
                           gamma.limits = c(3, 5),
@@ -113,7 +112,7 @@ result.2reg <- vstar.grid(dataset = model.2reg,
                           cores = 10)
 ```
 
-The we estimate the model with NLS.
+Then we estimate the model with NLS.
 
 ```{r model-nls}
 result.nls.2reg <- vstar.nls(result.2reg, tol = 1e-6, verbose = TRUE)
